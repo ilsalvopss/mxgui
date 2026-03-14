@@ -59,14 +59,12 @@ void RadioGroup::setChecked(RadioButton *rb)
             if(it->isChecked())
             {
                 it->setChecked(false);
-                it->enqueueForRedraw();
             }
         } else {
             if(!it->isChecked())
             {
                 checked=rb;
                 it->setChecked(true);
-                it->enqueueForRedraw();
             }
         }
     }
@@ -98,6 +96,7 @@ void RadioButton::check()
 void RadioButton::setChecked(bool checked)
 {
     this->checked=checked;
+    enqueueForRedraw();
 }
 
 string RadioButton::getLabel()
