@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2015 by Terraneo Federico                               *
+ *   Copyright (C) 2024 by Aaron Tognoli                                   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -25,53 +25,75 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#pragma once
 
-#include <vector>
-#include <string>
-#include <display.h>
-#include <misc_inst.h>
+#include "button.h"
+#ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
 
-class Dataset
+#include <utility>
+
+using namespace std;
+
+namespace mxgui::widgets {
+
+Button::Button(Window* w, DrawArea da, const string& text)
+    : InteractableButton(w,da)
 {
-public:
-    Dataset() : color(white) {}
-    Dataset(const std::vector<float>& data, Color color)
-        : data(&data), color(color) {}
+    this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
+    this->innerPointBr = Point(da.second.x()-3,da.second.y()-3);
+    if(text!="")
+    {
+        this->text=new Label(w,DrawArea(innerPointTl,innerPointBr),text);
+        this->text->setXAlignment(Alignment::CENTER);
+        this->text->setYAlignment(Alignment::CENTER);
+    }
+    resetState();
     
-    const std::vector<float>* data;
-    Color color;
-};
+}
 
-class SimplePlot
+Button::Button(Window *w, Point p, short width, short height, const string& text)
+    : Button(w,DrawArea(p,Point(p.x()+width,p.y()+height)),text)
+{}
+
+void Button::resetState()
 {
-public:
-    SimplePlot(Point upperLeft, Point lowerRight);
-    
-    void draw(DrawingContext& dc, const std::vector<float>& data,
-              Color color=white, bool fullRedraw=false);
-    
-    void draw(DrawingContext& dc, const std::vector<Dataset>& dataset,
-              bool fullRedraw=false);
+    if(colors!=make_pair(black,lightGrey))
+    {
+        colors=make_pair(black,lightGrey);
+        if(text)
+            text->setColors(colors);
+        InteractableButton::resetState();
+    }
+}
 
-    void setFont(const Font& font) { this->font=font; }
+void Button::buttonDown()
+{
+    if(colors!=make_pair(white,darkGrey))
+    {
+        colors=make_pair(white,darkGrey);
+        if(text)
+            text->setColors(colors);    
+        enqueueForRedraw();
+    } 
     
-    Point upperLeft;
-    Point lowerRight;
-    Font font;
-    Color foreground;
-    Color background;
-    
-    float ymin;
-    float ymax;
-    
-private:
-    std::string number(float num);
-    
-    bool first;
-    float prevYmin,prevYmax;
-};
+}
 
-} //namespace mxgui
+void Button::buttonUp()
+{
+    resetState();
+    InteractableButton::buttonUp();
+}
+
+void Button::onDraw(DrawingContextProxy& dc)
+{
+    DrawArea da=getDrawArea();
+    dc.clear(da.first,da.second,colors.second);
+    dc.drawImage(da.first,tl);
+    dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);
+    dc.drawImage(Point(da.first.x(),da.second.y()-2),bl);
+    dc.drawImage(innerPointBr,br);
+}
+
+}//namespace mxgui
+
+#endif //MXGUI_LEVEL_2

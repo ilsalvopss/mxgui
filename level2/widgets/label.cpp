@@ -33,7 +33,7 @@
 
 using namespace std;
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 Label::Label(Window* w, DrawArea da, const string& text)
     : Drawable(w,da), text(text), xAlign(Alignment::LEFT),

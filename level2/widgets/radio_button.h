@@ -27,59 +27,73 @@
 
 #pragma once
 
-#include "interactable_button.h"
+#include "checkbox.h"
 
 #ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
+namespace mxgui::widgets {
+
+//forward decls
+class RadioGroup;
 
 /**
- * A basic interactive Button.
+ * RadioButton.
  */
-class Button : public InteractableButton
+class RadioButton : public CheckBox
 {
 public:
     /**
      * Constructor
      * The object will be immediately enqueued for redraw
      * \param w window to which this object belongs
-     * \param da area on screen occupied by this object
-     * \param text text written in the Button
+     * \param group the group to which this radio button belongs
+     * \param p upper left point of the CheckBox
+     * \param dimension width of the CheckBox ( it's a square )
+     * \param text label of the checkbox
      */
-    Button(Window *w, DrawArea da, const std::string& text="");
-    
-    /**
-     * Constructor
-     * The object will be immediately enqueued for redraw
-     * \param w window to which this object belongs
-     * \param p upper left point of the button
-     * \param width width of the button
-     * \param height height of the button
-     * \param text text written in the button
-     */
-    Button(Window *w, Point p, short width, short height, const std::string& text="");
-    
+    RadioButton(Window *w,RadioGroup *group, Point p, short dimension=15, const std::string& text="");
+
     /**
      * \internal
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
     virtual void onDraw(DrawingContextProxy& dc);
-    
-protected:
-    /** 
-     * Overridden this member function to set the colors of the button when it is pressed
-    */
-    virtual void buttonDown();
 
     /**
-     * Overridden this member function to reset the colors of the button.
-    */
-    virtual void resetState();
-    /** 
-     * Overridden this member function to also set the colors of the button when it is released.
-    */
-    virtual void buttonUp();
+     * Returns the string of the label
+     */
+    std::string getLabel();
+    /**
+     * Used by RadioGroup to set the checked state of the radio button
+     * \param checked value to set
+     */
+    void setChecked(bool checked);
+    
+private:
+    RadioGroup* group; ///< The group to which this radio button belongs
+    void check();///< Overridden to call the RadioGroup::setChecked
+};
+
+class RadioGroup
+{
+public:
+    RadioGroup();
+    /**
+     * Adds a radio button to the group
+     * \param rb the radio button to add
+     */
+    void addRadioButton(RadioButton* rb);
+    /**
+     * Sets the checked radio button
+     * \param rb the radio button to check
+     */
+    void setChecked(RadioButton* rb);
+    RadioButton* getChecked();//< Returns the checked radio button or nullptr if none is checked
+    std::list<RadioButton*> radioButtons;//< The list of radio buttons which belong to this group
+
+private:
+    RadioButton* checked;//< The checked radio button
 };
 
 } //namesapce mxgui

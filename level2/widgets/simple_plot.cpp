@@ -33,7 +33,7 @@
 
 using namespace std;
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 //
 // class SimplePlot

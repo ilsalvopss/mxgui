@@ -1,6 +1,6 @@
 #include <entry.h>
 #include <memory>
-#include <level2/scrolling_list.h>
+#include <level2/widgets/scrolling_list.h>
 #include <iostream>
 using namespace std;
 using namespace mxgui;

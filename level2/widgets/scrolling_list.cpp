@@ -36,7 +36,7 @@
 
 using namespace std;
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 ScrollingList::ScrollingList(Window* w,Point start, int nItems,int width,int buttonHeight,int itemHeight) : Drawable(w,start,width,nItems*itemHeight)
 {

@@ -1,7 +1,7 @@
 
 #include <entry.h>
 #include <display.h>
-#include <level2/simple_plot.h>
+#include <level2/widgets/simple_plot.h>
 #include <unistd.h>
 #include <cmath>
 

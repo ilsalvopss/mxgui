@@ -1,14 +1,14 @@
 #include <entry.h>
 #include <memory>
-#include <level2/checkbox.h>
-#include <level2/button.h>
-#include <level2/radio_button.h>
-#include <level2/label.h>
+#include <level2/widgets/checkbox.h>
+#include <level2/widgets/button.h>
+#include <level2/widgets/radio_button.h>
+#include <level2/widgets/label.h>
 #include <iostream>
 #include "fps_counter.h"
 using namespace std;
 using namespace mxgui;
-
+using namespace mxgui::widgets;
 
 ENTRY()
 {

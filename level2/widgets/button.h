@@ -25,79 +25,63 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include "checkbox.h"
+#pragma once
+
+#include "interactable_button.h"
+
 #ifdef MXGUI_LEVEL_2
 
-#include <utility>
+namespace mxgui::widgets {
 
-using namespace std;
-
-namespace mxgui {
-
-CheckBox::CheckBox(Window *w, Point p, short dimension, const string& text, bool checked)
-    : InteractableButton(w,DrawArea(p,Point(p.x()+dimension,p.y()+dimension)))
+/**
+ * A basic interactive Button.
+ */
+class Button : public InteractableButton
 {
-    int textLen =w->getPreferences().font.calculateLength(text.c_str());
-    this->checked=checked;
-    this->colors=make_pair(black,lightGrey);
-    this->labelStartingPoint = Point(p.x()+dimension+4,p.y());
-    this->text=new Label(w,this->labelStartingPoint,textLen,dimension,text);
-    this->text->setXAlignment(Alignment::LEFT);
-    this->text->setYAlignment(Alignment::CENTER);
-    enqueueForRedraw();
-}
-
-void CheckBox::resetState()
-{
-    if(colors!=make_pair(black,lightGrey))
-    {
-        colors=make_pair(black,lightGrey);
-        InteractableButton::resetState();
-    }
+public:
+    /**
+     * Constructor
+     * The object will be immediately enqueued for redraw
+     * \param w window to which this object belongs
+     * \param da area on screen occupied by this object
+     * \param text text written in the Button
+     */
+    Button(Window *w, DrawArea da, const std::string& text="");
     
-}
+    /**
+     * Constructor
+     * The object will be immediately enqueued for redraw
+     * \param w window to which this object belongs
+     * \param p upper left point of the button
+     * \param width width of the button
+     * \param height height of the button
+     * \param text text written in the button
+     */
+    Button(Window *w, Point p, short width, short height, const std::string& text="");
+    
+    /**
+     * \internal
+     * Overridden this member function to draw the object.
+     * \param dc drawing context used to draw the object
+     */
+    virtual void onDraw(DrawingContextProxy& dc);
+    
+protected:
+    /** 
+     * Overridden this member function to set the colors of the button when it is pressed
+    */
+    virtual void buttonDown();
 
-void CheckBox::buttonDown()
-{
-    if(colors!=make_pair(white,darkGrey))
-    {
-        colors=make_pair(white,darkGrey);
-        enqueueForRedraw();
-    }
-}
+    /**
+     * Overridden this member function to reset the colors of the button.
+    */
+    virtual void resetState();
+    /** 
+     * Overridden this member function to also set the colors of the button when it is released.
+    */
+    virtual void buttonUp();
+};
 
-void CheckBox::buttonUp()
-{
-    this->check();
-    resetState();
-    InteractableButton::buttonUp();
-}
-
-void CheckBox::check()
-{
-    checked=!checked;
-}
-
-bool CheckBox::isChecked()
-{
-    return this->checked;
-}
-
-void CheckBox::onDraw(DrawingContextProxy& dc)
-{
-    DrawArea da=getDrawArea();
-    dc.clear(da.first,da.second,colors.second);
-    dc.drawImage(da.first,tl);
-    dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);
-    dc.drawImage(Point(da.first.x(),da.second.y()-2),bl);
-    dc.drawImage(innerPointBr,br);
-    if(isChecked())
-    {
-        dc.line(innerPointTl,innerPointBr,black);
-        dc.line(Point(innerPointTl.x(),innerPointBr.y()),Point(innerPointBr.x(),innerPointTl.y()),black);
-    }
-}
-
-} //namespace mxgui
+} //namesapce mxgui
 
 #endif //MXGUI_LEVEL_2

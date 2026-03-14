@@ -55,15 +55,15 @@ set(LIB_SRCS
     ../../textbox.cpp
     ../../drivers/display_qt.cpp
     ../../drivers/event_qt.cpp
+    ../../level2/widgets/button.cpp
+    ../../level2/widgets/checkbox.cpp
+    ../../level2/widgets/radio_button.cpp
+    ../../level2/widgets/scrolling_list.cpp
+    ../../level2/widgets/label.cpp
+    ../../level2/widgets/simple_plot.cpp
     ../../level2/input.cpp
-    ../../level2/button.cpp
-    ../../level2/checkbox.cpp
-    ../../level2/radio_button.cpp
-    ../../level2/scrolling_list.cpp
     ../../level2/application.cpp
     ../../level2/drawing_context_proxy.cpp
-    ../../level2/label.cpp
-    ../../level2/simple_plot.cpp
     from_miosix/unicode.cpp
     qtbackend.cpp
     window.cpp

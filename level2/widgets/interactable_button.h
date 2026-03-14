@@ -29,14 +29,15 @@
 
 #include "mxgui_settings.h"
 #include <functional>
-#include "application.h"
+#include "../application.h"
 #include "label.h"
 #include "input.h"
 #include "../misc_inst.h"
+#include "../input.h"
 
 #ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 //Corner images of the button
 static const unsigned short tlp[]=

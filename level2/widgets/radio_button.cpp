@@ -25,77 +25,101 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#pragma once
-
-#include "checkbox.h"
-
+#include "radio_button.h"
 #ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
+#include <utility>
 
-//forward decls
-class RadioGroup;
+using namespace std;
 
-/**
- * RadioButton.
- */
-class RadioButton : public CheckBox
+namespace mxgui::widgets {
+
+//
+// class RadioGroup
+//
+
+RadioGroup::RadioGroup()
 {
-public:
-    /**
-     * Constructor
-     * The object will be immediately enqueued for redraw
-     * \param w window to which this object belongs
-     * \param group the group to which this radio button belongs
-     * \param p upper left point of the CheckBox
-     * \param dimension width of the CheckBox ( it's a square )
-     * \param text label of the checkbox
-     */
-    RadioButton(Window *w,RadioGroup *group, Point p, short dimension=15, const std::string& text="");
+    radioButtons = list<RadioButton*>();
+    checked=nullptr;
+}
 
-    /**
-     * \internal
-     * Overridden this member function to draw the object.
-     * \param dc drawing context used to draw the object
-     */
-    virtual void onDraw(DrawingContextProxy& dc);
-
-    /**
-     * Returns the string of the label
-     */
-    std::string getLabel();
-    /**
-     * Used by RadioGroup to set the checked state of the radio button
-     * \param checked value to set
-     */
-    void setChecked(bool checked);
-    
-private:
-    RadioGroup* group; ///< The group to which this radio button belongs
-    void check();///< Overridden to call the RadioGroup::setChecked
-};
-
-class RadioGroup
+void RadioGroup::addRadioButton(RadioButton *rb)
 {
-public:
-    RadioGroup();
-    /**
-     * Adds a radio button to the group
-     * \param rb the radio button to add
-     */
-    void addRadioButton(RadioButton* rb);
-    /**
-     * Sets the checked radio button
-     * \param rb the radio button to check
-     */
-    void setChecked(RadioButton* rb);
-    RadioButton* getChecked();//< Returns the checked radio button or nullptr if none is checked
-    std::list<RadioButton*> radioButtons;//< The list of radio buttons which belong to this group
+    if(std::find(radioButtons.begin(), radioButtons.end(), rb) == radioButtons.end())
+        radioButtons.push_back(rb);
+}
 
-private:
-    RadioButton* checked;//< The checked radio button
-};
+void RadioGroup::setChecked(RadioButton *rb)
+{
+    for(auto it : radioButtons)
+    {
+        if(it!=rb)
+        {
+            if(it->isChecked())
+            {
+                it->setChecked(false);
+                it->enqueueForRedraw();
+            }
+        } else {
+            if(!it->isChecked())
+            {
+                checked=rb;
+                it->setChecked(true);
+                it->enqueueForRedraw();
+            }
+        }
+    }
+}
 
-} //namesapce mxgui
+RadioButton* RadioGroup::getChecked()
+{
+    return checked;
+}
+
+//
+// class RadioButton
+//
+
+RadioButton::RadioButton(Window *w,RadioGroup *group, Point p, short dimension, const string& text)
+    : CheckBox(w,p,dimension,text,false)
+{
+    this->group=group;
+    this->group->addRadioButton(this);
+    enqueueForRedraw();
+}
+
+void RadioButton::check()
+{
+    group->setChecked(this);
+    enqueueForRedraw();
+}
+
+void RadioButton::setChecked(bool checked)
+{
+    this->checked=checked;
+}
+
+string RadioButton::getLabel()
+{
+    return text->getText();
+}
+
+void RadioButton::onDraw(DrawingContextProxy& dc)
+{
+    DrawArea da=getDrawArea();
+    dc.clear(da.first,da.second,colors.second);
+    dc.drawImage(da.first,tl);
+    dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);
+    dc.drawImage(Point(da.first.x(),da.second.y()-2),bl);
+    dc.drawImage(innerPointBr,br);
+    dc.drawRectangle(innerPointTl,innerPointBr,black);
+    if(isChecked())
+    {
+        dc.clear(innerPointTl,innerPointBr,black);
+    }
+}
+
+}//namespace mxgui
 
 #endif //MXGUI_LEVEL_2

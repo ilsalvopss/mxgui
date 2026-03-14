@@ -29,11 +29,11 @@
 
 #include <string>
 #include "mxgui_settings.h"
-#include "application.h"
+#include "../application.h"
 
 #ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 /**
  * A Label is used to print non-interactive text on the screen

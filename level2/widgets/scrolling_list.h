@@ -39,7 +39,7 @@
 
 #ifdef MXGUI_LEVEL_2
 
-namespace mxgui {
+namespace mxgui::widgets {
 
 /**
  * Types of ScrollButton
