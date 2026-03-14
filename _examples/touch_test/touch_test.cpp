@@ -32,6 +32,10 @@
 #include <cstdio>
 #include <cstring>
 
+#ifndef _MIOSIX
+#define siprintf sprintf //The low code size integer only sprintf
+#endif //_MIOSIX
+
 using namespace std;
 using namespace mxgui;
 
