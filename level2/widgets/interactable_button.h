@@ -31,9 +31,8 @@
 #include <functional>
 #include "../application.h"
 #include "label.h"
-#include "input.h"
-#include "../misc_inst.h"
 #include "../input.h"
+#include "../../misc_inst.h"
 
 #ifdef MXGUI_LEVEL_2
 
