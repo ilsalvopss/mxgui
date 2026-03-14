@@ -36,7 +36,7 @@ void UpdateSignalSender::update()
 // class Window
 //
 
-Window::Window(QWidget *parent): QWidget(parent),
+SimulatorWindow::SimulatorWindow(QWidget *parent): QWidget(parent),
         image(QSize(FrameBuffer::width,FrameBuffer::height),
 #ifdef MXGUI_COLOR_DEPTH_16_BIT
         QImage::Format_RGB16),
@@ -68,40 +68,40 @@ Window::Window(QWidget *parent): QWidget(parent),
     qb.start(sender);
 }
 
-void Window::updateFrameBuffer()
+void SimulatorWindow::updateFrameBuffer()
 {
     FrameBuffer& buffer=QTBackend::instance().getFrameBuffer();
     std::memcpy(image.bits(),buffer.getData(),image.sizeInBytes());
     this->update();
 }
 
-void Window::aPressed()
+void SimulatorWindow::aPressed()
 {
     addEvent(Event(EventType::ButtonA,EventDirection::DOWN));
 }
 
-void Window::aReleased()
+void SimulatorWindow::aReleased()
 {
     addEvent(Event(EventType::ButtonA,EventDirection::UP));
 }
 
-void Window::bPressed()
+void SimulatorWindow::bPressed()
 {
     addEvent(Event(EventType::ButtonB,EventDirection::DOWN));
 }
 
-void Window::bReleased()
+void SimulatorWindow::bReleased()
 {
     addEvent(Event(EventType::ButtonB,EventDirection::UP));
 }
 
-void Window::paintEvent(QPaintEvent *event)
+void SimulatorWindow::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.drawImage(QPoint(0,0),image);
 }
 
-void Window::mouseMoveEvent(QMouseEvent *event)
+void SimulatorWindow::mouseMoveEvent(QMouseEvent *event)
 {
     if(event->x()<0 || event->x()>=FrameBuffer::width) return;
     if(event->y()<0 || event->y()>=FrameBuffer::height) return;
@@ -109,7 +109,7 @@ void Window::mouseMoveEvent(QMouseEvent *event)
         EventDirection::DOWN));
 }
 
-void Window::mousePressEvent(QMouseEvent *event)
+void SimulatorWindow::mousePressEvent(QMouseEvent *event)
 {
     if(event->x()<0 || event->x()>=FrameBuffer::width) return;
     if(event->y()<0 || event->y()>=FrameBuffer::height) return;
@@ -117,7 +117,7 @@ void Window::mousePressEvent(QMouseEvent *event)
         EventDirection::DOWN));
 }
 
-void Window::mouseReleaseEvent(QMouseEvent *event)
+void SimulatorWindow::mouseReleaseEvent(QMouseEvent *event)
 {
     if(event->x()<0 || event->x()>=FrameBuffer::width) return;
     if(event->y()<0 || event->y()>=FrameBuffer::height) return;
@@ -125,12 +125,12 @@ void Window::mouseReleaseEvent(QMouseEvent *event)
         EventDirection::UP));
 }
 
-void Window::mouseDoubleClickEvent(QMouseEvent *event)
+void SimulatorWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
     //Event ignored
 }
 
-void Window::keyPressEvent(QKeyEvent *event)
+void SimulatorWindow::keyPressEvent(QKeyEvent *event)
 {
     if(event->key()>0xff)
     {
@@ -144,7 +144,7 @@ void Window::keyPressEvent(QKeyEvent *event)
     addEvent(Event(EventType::KeyDown,k));
 }
 
-void Window::keyReleaseEvent(QKeyEvent *event)
+void SimulatorWindow::keyReleaseEvent(QKeyEvent *event)
 {
     if(event->key()>0xff)
     {

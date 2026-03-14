@@ -61,7 +61,7 @@ private:
 /**
  * Main window
  */
-class Window : public QWidget
+class SimulatorWindow : public QWidget
 {
 Q_OBJECT
 public:
@@ -69,7 +69,7 @@ public:
      * Constructor.
      * \param parent parent widget
      */
-    explicit Window(QWidget *parent=nullptr);
+    explicit SimulatorWindow(QWidget *parent=nullptr);
 
 private slots:
     /**
