@@ -633,9 +633,10 @@ public:
         pthread_mutex_unlock(&display.dispMutex);
     }
 
-private:
     DrawingContext(const DrawingContext&)=delete;
     DrawingContext& operator=(DrawingContext&)=delete;
+
+private:
 
     Display& display; ///< Underlying display object
 };
