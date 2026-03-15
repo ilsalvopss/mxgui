@@ -39,7 +39,7 @@ namespace mxgui {
 // class Drawable
 //
 
-Drawable::Drawable(Window* w, DrawArea da) : w(w), da(da), needRedraw(false)
+Drawable::Drawable(Window* w, Rect da) : w(w), da(da), needRedraw(false)
 {
     w->addDrawable(this);
 }

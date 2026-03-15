@@ -346,7 +346,7 @@ public:
      * \param display the display on which you want to draw
      * \param da drawing area of popup
      */
-    BackgroudDrawingContextProxy(Display& display, DrawArea da);
+    BackgroudDrawingContextProxy(Display& display, Rect da);
     
     //TODO
 };
@@ -364,7 +364,7 @@ public:
      * \param display the display on which you want to draw
      * \param da drawing area of popup
      */
-    ForegroundDrawingContextProxy(Display& display, DrawArea da);
+    ForegroundDrawingContextProxy(Display& display, Rect da);
     
     //TODO
 };

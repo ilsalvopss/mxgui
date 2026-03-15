@@ -36,14 +36,14 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-Button::Button(Window* w, DrawArea da, const string& text)
+Button::Button(Window* w, Rect da, const string& text)
     : InteractableButton(w,da)
 {
     this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
     this->innerPointBr = Point(da.second.x()-3,da.second.y()-3);
     if(text!="")
     {
-        this->text=new Label(w,DrawArea(innerPointTl,innerPointBr),text);
+        this->text=new Label(w,Rect(innerPointTl,innerPointBr),text);
         this->text->setXAlignment(Alignment::CENTER);
         this->text->setYAlignment(Alignment::CENTER);
     }
@@ -52,7 +52,7 @@ Button::Button(Window* w, DrawArea da, const string& text)
 }
 
 Button::Button(Window *w, Point p, short width, short height, const string& text)
-    : Button(w,DrawArea(p,Point(p.x()+width,p.y()+height)),text)
+    : Button(w,Rect(p,Point(p.x()+width,p.y()+height)),text)
 {}
 
 void Button::resetState()
@@ -86,7 +86,7 @@ void Button::buttonUp()
 
 void Button::onDraw(DrawingContextProxy& dc)
 {
-    DrawArea da=getDrawArea();
+    Rect da=getDrawArea();
     dc.clear(da.first,da.second,colors.second);
     dc.drawImage(da.first,tl);
     dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);

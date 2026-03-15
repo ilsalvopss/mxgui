@@ -106,7 +106,7 @@ string RadioButton::getLabel()
 
 void RadioButton::onDraw(DrawingContextProxy& dc)
 {
-    DrawArea da=getDrawArea();
+    Rect da=getDrawArea();
     dc.clear(da.first,da.second,colors.second);
     dc.drawImage(da.first,tl);
     dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);

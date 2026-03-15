@@ -67,7 +67,7 @@ public:
      * \param w pointer to the window containing the button
      * \param da draw area of the button
      */
-    InteractableButton(Window* w, DrawArea da)
+    InteractableButton(Window* w, Rect da)
         : Drawable(w,da)
     {
         this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
@@ -150,7 +150,7 @@ protected:
      */
     bool checkEventArea(Event e)
     {
-        DrawArea da=getDrawArea();
+        Rect da=getDrawArea();
         return within(e.getPoint(),da.first,da.second);
     }
 
@@ -181,7 +181,8 @@ protected:
      * \return the draw area of the button
      * 
      */
-    virtual DrawArea getDrawArea() const
+    //TODO: what?
+    virtual Rect getDrawArea() const
     {
         return Drawable::getDrawArea();
     }

@@ -17,7 +17,8 @@ ENTRY()
     RadioGroup rg=RadioGroup();
     RadioGroup rg2=RadioGroup();
     shared_ptr<Window> w= make_shared<Window>();
-    Button b1=Button(w.get(),DrawArea(Point(10,10),Point(70,40)),"Button 1");
+    Button b1=Button(w.get(),Rect(Point(10,10),Point(70,40)),"Button 1");
+    Button b1=Button(w.get(),Rect(Point(10,10),Point(70,40)),"Button 1");
     
 
     Label l1=Label(w.get(),Point(110,10),5,20,"0");

@@ -46,7 +46,7 @@ public:
      * \param da area on screen occupied by this object
      * \param text text written in the Button
      */
-    Button(Window *w, DrawArea da, const std::string& text="");
+    Button(Window *w, Rect da, const std::string& text="");
     
     /**
      * Constructor

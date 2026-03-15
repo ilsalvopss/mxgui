@@ -35,7 +35,7 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-Label::Label(Window* w, DrawArea da, const string& text)
+Label::Label(Window* w, Rect da, const string& text)
     : Drawable(w,da), text(text), xAlign(Alignment::LEFT),
       yAlign(Alignment::CENTER), overrideColors(false)
 {
@@ -58,7 +58,7 @@ void Label::setColors(std::pair<Color,Color> colors)
 
 void Label::onDraw(DrawingContextProxy& dc)
 {
-    DrawArea da=getDrawArea();
+    Rect da=getDrawArea();
     Font font=dc.getFont();
     pair<Color,Color> c;
     if(overrideColors) c=colors;

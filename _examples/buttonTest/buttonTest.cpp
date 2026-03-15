@@ -16,7 +16,7 @@ ENTRY()
     auto rg=widgets::RadioGroup();
     auto rg2=widgets::RadioGroup();
     shared_ptr<Window> w= make_shared<Window>();
-    auto b1=widgets::Button(w.get(),DrawArea(Point(10,10),Point(70,40)),"Button 1");
+    auto b1=widgets::Button(w.get(),Rect(Point(10,10),Point(70,40)),"Button 1");
     auto l1=widgets::Label(w.get(),Point(110,10),5,20,"0");
 
     auto c1=widgets::CheckBox(w.get(),Point(10,60),15,"Check 1");

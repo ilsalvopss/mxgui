@@ -76,14 +76,14 @@ public:
      * \param w window to which this object belongs
      * \param da area on screen occupied by this object
      */
-    Drawable(Window *w, DrawArea da);
+    Drawable(Window *w, Rect da);
     
     /**
      * Constructor
      * \param w window to which this object belongs
-     * \param p upper left point of the text label
-     * \param width width of the text label
-     * \param height height of the text label
+     * \param p upper left point of the drawable
+     * \param width width of the drawable
+     * \param height height of drawable
      */
     Drawable(Window *w, Point p, short width, short height);
     
@@ -102,7 +102,7 @@ public:
     /**
      * \return true if this Drawable needs to be redrawn 
      */
-    bool needsRedraw() const { return needRedraw; }
+    [[nodiscard]] bool needsRedraw() const { return needRedraw; }
     
     /**
      * \internal
@@ -124,21 +124,29 @@ public:
      * Destructor
      */
     virtual ~Drawable();
+
+    bool visible(const Rect& drawArea) const { return !da.intersection(drawArea).empty(); }
     
 protected:
     /**
      * \return the window
      */
+    // TODO: check what this is used for
     Window *getWindow() { return w; }
     
     /**
      * \return the draw area of the object
      */
-    DrawArea getDrawArea() const { return da; }
+    [[nodiscard]] Rect getDrawArea() const { return da; }
+
+    /**
+     * Signal that this object needs to be redrawn
+     */
+    void enqueueForRedraw();
     
 private:
     Window *w;       ///< Window to which this drawable belongs
-    DrawArea da;     ///< Area on screen occupied by this object
+    Rect da;     ///< Area on screen occupied by this object
     bool needRedraw; ///< True if this object needs to be redrawn
 };
 

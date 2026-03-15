@@ -44,8 +44,8 @@ ScrollingList::ScrollingList(Window* w,Point start, int nItems,int width,int but
     this->itemHeight=itemHeight;
     this->scrollingThread=nullptr;
     scrolling=false;
-    DrawArea da = getDrawArea();
-    listArea = DrawArea(da.first,Point(da.second.x()-buttonHeight-1,da.second.y()));
+    auto da = getDrawArea();
+    listArea = Rect(da.first,Point(da.second.x()-buttonHeight-1,da.second.y()));
     Point upButtonPoint=Point(listArea.second.x(),listArea.first.y());
     Point downButtonPoint=Point(listArea.second.x(),listArea.second.y()-buttonHeight);
 
@@ -72,7 +72,7 @@ ScrollingList::ScrollingList(Window* w,Point start, int nItems,int width,int but
             this->scrollingThread=nullptr;
         }
     });
-    scroll = new ScrollButton(w,DrawArea(scrollAreaTLPoint,scrollAreaBRPoint),ScrollButtonType::SCROLL);
+    scroll = new ScrollButton(w,Rect(scrollAreaTLPoint,scrollAreaBRPoint),ScrollButtonType::SCROLL);
     down = new ScrollButton(w,downButtonPoint,ScrollButtonType::DOWN,buttonHeight);
     down->setDownCallback([this](){
         this->downOne();
@@ -229,7 +229,7 @@ void ScrollingList::onDraw(DrawingContextProxy& dc)
     */
 }
 
-bool ScrollingList::checkArea(Event e,DrawArea da)
+bool ScrollingList::checkArea(Event e,Rect da)
 {
     return within(e.getPoint(),da.first,da.second);
 }
@@ -281,7 +281,7 @@ void ScrollingList::onEvent(Event e)
 
         return;
     }
-    else if(this->checkArea(e,DrawArea(Point(up->readDrawArea().first.x(),up->readDrawArea().second.y()),Point(scroll->readDrawArea().second.x(),scroll->readDrawArea().first.y()))))
+    else if(this->checkArea(e,Rect(Point(up->readDrawArea().first.x(),up->readDrawArea().second.y()),Point(scroll->readDrawArea().second.x(),scroll->readDrawArea().first.y()))))
     {
         if(e.getEvent()==EventType::TouchUp)
         {
@@ -289,7 +289,7 @@ void ScrollingList::onEvent(Event e)
         }
         return;
     }
-    else if(this->checkArea(e,DrawArea(Point(scroll->readDrawArea().first.x(),scroll->readDrawArea().second.y()),Point(down->readDrawArea().second.x(),down->readDrawArea().first.y()))))
+    else if(this->checkArea(e,Rect(Point(scroll->readDrawArea().first.x(),scroll->readDrawArea().second.y()),Point(down->readDrawArea().second.x(),down->readDrawArea().first.y()))))
     {
         if(e.getEvent()==EventType::TouchUp)
         {
@@ -347,7 +347,7 @@ void ScrollingList::updateScrollButton()
         int scrollHeight = (scrollAreaBRPoint.y()-scrollAreaTLPoint.y())*visibleItems.size()/items.size();
         int scrollY = (scrollAreaBRPoint.y()-scrollAreaTLPoint.y())*firstVisibleIndex/items.size();
 
-        scroll->setDrawArea(DrawArea(Point(scrollAreaTLPoint.x(),scrollAreaTLPoint.y()+scrollY),Point(scrollAreaBRPoint.x(),scrollAreaTLPoint.y()+scrollY+scrollHeight)));
+        scroll->setDrawArea(Rect(Point(scrollAreaTLPoint.x(),scrollAreaTLPoint.y()+scrollY),Point(scrollAreaBRPoint.x(),scrollAreaTLPoint.y()+scrollY+scrollHeight)));
         scroll->enqueueForRedraw();
 
     }

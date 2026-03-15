@@ -48,7 +48,7 @@ public:
      * \param da area on screen occupied by this object
      * \param text text written in the Label
      */
-    Label(Window *w, DrawArea da, const std::string& text="");
+    Label(Window *w, Rect da, const std::string& text="");
     
     /**
      * Constructor

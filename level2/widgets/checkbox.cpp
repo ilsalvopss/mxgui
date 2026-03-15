@@ -35,7 +35,7 @@ using namespace std;
 namespace mxgui::widgets {
 
 CheckBox::CheckBox(Window *w, Point p, short dimension, const string& text, bool checked)
-    : InteractableButton(w,DrawArea(p,Point(p.x()+dimension,p.y()+dimension)))
+    : InteractableButton(w,Rect(p,Point(p.x()+dimension,p.y()+dimension)))
 {
     int textLen =w->getPreferences().font.calculateLength(text.c_str());
     this->checked=checked;
@@ -85,7 +85,7 @@ bool CheckBox::isChecked()
 
 void CheckBox::onDraw(DrawingContextProxy& dc)
 {
-    DrawArea da=getDrawArea();
+    Rect da=getDrawArea();
     dc.clear(da.first,da.second,colors.second);
     dc.drawImage(da.first,tl);
     dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);

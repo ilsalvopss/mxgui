@@ -65,7 +65,7 @@ public:
      * \param da area on screen occupied by this object
      * \param type type of the button
      */
-    ScrollButton(Window *w, DrawArea da, ScrollButtonType type) : Button(w,da)
+    ScrollButton(Window *w, Rect da, ScrollButtonType type) : Button(w,da)
     {
         this->type=type;
         mutableDrawArea = da;
@@ -81,7 +81,7 @@ public:
      * \param bHeight height of the button
      * \param type type of the button
      */
-    ScrollButton(Window *w,Point start,int bWidth,int bHeight,ScrollButtonType type) : ScrollButton(w,DrawArea(start,Point(start.x()+bWidth,start.y()+bHeight)),type)
+    ScrollButton(Window *w,Point start,int bWidth,int bHeight,ScrollButtonType type) : ScrollButton(w,Rect(start,Point(start.x()+bWidth,start.y()+bHeight)),type)
     {
     }
 
@@ -162,7 +162,7 @@ public:
     /**
      * Used to set the DrawArea of the button to allow it to be moved
      */
-    void setDrawArea(DrawArea da)
+    void setDrawArea(Rect da)
     {
         mutableDrawArea = da;
         updateInnerPoints();
@@ -172,7 +172,7 @@ public:
     /**
      * Used to read the DrawArea of the button from outside the class
      */
-    DrawArea readDrawArea()
+    Rect readDrawArea()
     {
         return getDrawArea();
     }
@@ -184,13 +184,13 @@ public:
 
 protected:
     bool pressed=false;///< True if the button is pressed
-    DrawArea mutableDrawArea;///< DrawArea of the button that can be changed
+    Rect mutableDrawArea;///< DrawArea of the button that can be changed
 
     /**
      * Used inside the class to properly draw the button
      * \return the mutableDrawArea of the button
      */
-    DrawArea getDrawArea() const
+    Rect getDrawArea() const
     {   
         return mutableDrawArea;
     }
@@ -204,7 +204,7 @@ private:
      */
     void updateInnerPoints()
     {
-        DrawArea da = getDrawArea();
+        Rect da = getDrawArea();
         this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
         this->innerPointBr = Point(da.second.x()-3,da.second.y()-3);
     }
@@ -223,14 +223,14 @@ public:
      * \param text text written in the Label
      * \param itemHeight height of the item
      */
-    ItemLabel(Window* w,Point start,int width,int itemHeight) : Label(w,DrawArea(start,Point(start.x()+width,start.y()+itemHeight)),"")
+    ItemLabel(Window* w,Point start,int width,int itemHeight) : Label(w,Rect(start,Point(start.x()+width,start.y()+itemHeight)),"")
     {
     }
 
     /**
      * Used to read the draw area of the label from outside the class
      */
-    DrawArea readDrawArea()
+    Rect readDrawArea()
     {
         return getDrawArea();
     }
@@ -297,7 +297,7 @@ private:
      * \param e event to be checked
      * \param da draw area to be checked
      */
-    bool checkArea(Event e,DrawArea da);
+    bool checkArea(Event e, Rect da);
 
     void upOne(); ///< Scroll up one item
     void keepScrollingUp(); ///< Keep scrolling up
@@ -314,7 +314,7 @@ private:
     int itemHeight;///< Height of the items
     bool scrolling;///< True if the scroll button is being dragged
     std::thread *scrollingThread;///< Thread to keep scrolling
-    DrawArea listArea; ///< Area of the list
+    Rect listArea; ///< Area of the list
     std::vector<ItemLabel*> visibleItems; ///< Labels of the visible items
     std::vector<std::string> items; ///< Items of the list
     std::string selected; ///< Selected item
