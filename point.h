@@ -59,7 +59,7 @@ public:
     /**
      * Compare two points for equality
      */
-    bool operator== (Point p)
+    bool operator== (const Point& p) const
     {
         return (this->x_ == p.x_) && (this->y_ == p.y_);
     }
@@ -67,9 +67,18 @@ public:
     /**
      * Compare two points for inequality
      */
-    bool operator!= (Point p)
+    bool operator!= (const Point& p) const
     {
         return (this->x_ != p.x_) || (this->y_ != p.y_);
+    }
+
+    /**
+    * \param b upper left corner of test area
+    * \param c lower right corner of test ares
+    * \return true if this is within the area identified by b and c
+    */
+    [[nodiscard]] bool within(const Point& b, const Point& c) const {
+        return x_ >= b.x_ && y_ >= b.y_ && x_ < c.x_ && y_ < c.y_;
     }
 
     //Uses default copy constructor and operator=
@@ -81,9 +90,9 @@ private:
  * \param a point to test
  * \param b upper left corner of test area
  * \param c lower right corner of test ares
- * \return true if the point a is within the area identified by b and c
+ * \return true if point a is within the area identified by b and c
  */
-inline bool within(Point a, Point b, Point c)
+inline bool within(const Point& a, const Point& b, const Point& c)
 {
     return a.x()>=b.x() && a.y()>=b.y() && a.x()<c.x() && a.y()<c.y();
 }
