@@ -28,20 +28,10 @@
 #pragma once
 
 #include <utility>
+#include <list>
 #include "point.h"
 
 namespace mxgui {
-
-/**
-* A Region in a bounding box on screen.
-*/
-class Region {
-
-public:
-    virtual ~Region() = default;
-
-    [[nodiscard]] virtual bool contains(const Point& p) const = 0;
-};
 
 /**
  * \ingroup pub_iface_2
@@ -50,7 +40,7 @@ public:
  * \param first upper left point
  * \param second lower right point
  */
-class Rect final : public std::pair<Point,Point>, public Region
+class Rect final : public std::pair<Point,Point>
 {
 public:
     // Empty rect constructor, yields an area with both points at (0,0)
@@ -63,7 +53,7 @@ public:
         return first.x() >= second.x() || first.y() >= second.y();
     }
 
-    [[nodiscard]] bool contains(const Point& p) const override
+    [[nodiscard]] bool contains(const Point& p) const
     {
         return p.within(first,second);
     }
@@ -72,6 +62,7 @@ public:
     {
         // An area contains another if the upper left point of the other area is within this area
         // and the lower right point of the other area is within this area
+        // TODO: check if this is consistent with "strictness"
         return other.first.within(first,second) && other.second.within(first,second);
     }
 
@@ -86,18 +77,23 @@ public:
         return { newFirst, newSecond };
     }
 
+    [[nodiscard]] Rect translate(const Point& p) const
+    {
+        return { first + p, second + p };
+    }
+
     // let's do a difference s.t. we return one (or more!) new Rects.
     // more is because the difference of two rectangles can be a non-rectangular shape,
     // which we can represent as the union of multiple rectangles.
     // TODO: (optimization) we're guaranteed to have at most 4 rects,
     //       we probably should use a fixed-size array instead of a vector, to avoid dynamic memory allocation.
-    [[nodiscard]] std::vector<Rect> difference(const Rect& other) const
+    [[nodiscard]] std::vector<Rect> operator- (const Rect& other) const
     {
         std::vector<Rect> result;
 
-        auto intersection = this->intersection(other);
+        const auto intersection = this->intersection(other);
         // If the areas don't intersect, the difference is just this area
-        if(!intersection.contains(other))
+        if(intersection.empty())
         {
             result.push_back(*this);
             return result;
@@ -127,6 +123,23 @@ public:
                 Point(intersection.second.x(), intersection.first.y()),
                 Point(second.x(), intersection.second.y())
                 );
+
+        return result;
+    }
+
+    static std::list<Rect> subtractRect(const std::list<Rect>& regions, const Rect& cover)
+    {
+        std::list<Rect> result;
+
+        for (const auto& region : regions) {
+            const auto intersection = region.intersection(cover);
+
+            const auto pieces = region - intersection;
+            for (const auto& piece : pieces) {
+                if (!piece.empty())
+                    result.push_back(piece);
+            }
+        }
 
         return result;
     }
