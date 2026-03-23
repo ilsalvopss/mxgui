@@ -72,6 +72,29 @@ public:
         return (this->x_ != p.x_) || (this->y_ != p.y_);
     }
 
+    Point operator- () const {
+#ifdef MXGUI_PEDANTIC_CHECKS
+        if (x_ == std::numeric_limits<short int>::min() || y_ == std::numeric_limits<short int>::min())
+            throw std::overflow_error("Point negation overflow");
+#endif
+        return { static_cast<short int>(-x_), static_cast<short int>(-y_) };
+    }
+
+    // Add two points, yielding a new point with the sum of the coordinates
+    Point operator+ (const Point& p) const {
+#ifdef MXGUI_PEDANTIC_CHECKS
+        if (p.x_ > 0 && x_ > std::numeric_limits<short int>::max() - p.x_)
+            throw std::overflow_error("Point addition overflow");
+        if (p.x_ < 0 && x_ < std::numeric_limits<short int>::min() - p.x_)
+            throw std::underflow_error("Point addition underflow");
+        if (p.y_ > 0 && y_ > std::numeric_limits<short int>::max() - p.y_)
+            throw std::overflow_error("Point addition overflow");
+        if (p.y_ < 0 && y_ < std::numeric_limits<short int>::min() - p.y_)
+            throw std::underflow_error("Point addition underflow");
+#endif
+        return { static_cast<short int>(x_ + p.x_), static_cast<short int>(y_ + p.y_) };
+    }
+
     /**
     * \param b upper left corner of test area
     * \param c lower right corner of test ares
