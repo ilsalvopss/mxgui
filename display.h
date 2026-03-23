@@ -246,6 +246,20 @@ protected:
     virtual void line(Point a, Point b, Color color)=0;
 
     /**
+     * Draw a line between point a and point b, with color c, clipped to the rectangle defined by points c and d
+     * \param a first point
+     * \param b second point
+     * \param c upper left corner of clipping rectangle
+     * \param d lower right corner of clipping rectangle
+     * \param color line color
+     */
+    virtual void clippedLine(Point a, Point b, Point c, Point d, Color color) {
+        throw std::runtime_error("Not implemented on this display, sorry."
+                                 "Implementation should be straightforward: a Line::draw with clipping is already implemented,"
+                                 "look at qt backend for an example");
+    };
+
+    /**
      * Draw an horizontal line on screen.
      * Instead of line(), this member function takes an array of colors to be
      * able to individually set pixel colors of a line.
@@ -489,6 +503,11 @@ public:
     void line(Point a, Point b, Color color)
     {
         display.line(a,b,color);
+    }
+
+    void clippedLine(Point a, Point b, Point clipA, Point clipB, Color color)
+    {
+        display.clippedLine(a,b,clipA,clipB,color);
     }
 
     /**

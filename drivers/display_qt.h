@@ -148,6 +148,16 @@ public:
     void line(Point a, Point b, Color color) override;
 
     /**
+     * Draw a line between point a and point b, with color color, clipped by the rectangle identified by points c and d.
+     * @param a first point
+     * @param b second point
+     * @param c upper left corner of clipping rectangle
+     * @param d lower right corner of clipping rectangle
+     * @param color line color
+     */
+    void clippedLine(Point a, Point b, Point c, Point d, Color color) override;
+
+    /**
      * Draw an horizontal line on screen.
      * Instead of line(), this member function takes an array of colors to be
      * able to individually set pixel colors of a line.
