@@ -48,6 +48,19 @@ public:
      */
     template<typename T>
     static void draw(T& surface, Point a, Point b, Color c);
+
+    /**
+     * Draw a line between point a and point b, clipped to the rectangle
+     * defined by topLeft and bottomRight. TODO: check for inclusivity
+     * \param surface an object providing beginPixel() and setPixel()
+     * \param a first point
+     * \param b second point
+     * \param c line color
+     * \param topLeft top-left corner of the clipping rectangle
+     * \param bottomRight bottom-right corner of the clipping rectangle
+     */
+    template<typename T>
+    static void draw(T& surface, Point a, Point b, Color c, Point topLeft, Point bottomRight);
 };
 
 template<typename T>
@@ -109,6 +122,78 @@ void Line::draw(T& surface, Point a, Point b, Color c)
             for(short y=a.y();y>=b.y();y--)
             {
                 surface.setPixel(Point(x,y),c);
+                if(d>0)
+                {
+                    x+=xincr;
+                    d+=v;
+                } else d+=w;
+            }
+        }
+    }
+}
+
+template<typename T>
+void Line::draw(T& surface, Point a, Point b, Color c, Point topLeft, Point bottomRight) {
+    // Bresenham's algorithm, with per-pixel clipping
+    surface.beginPixel();
+    const short dx=b.x()-a.x();
+    const short dy=b.y()-a.y();
+    const short adx=abs(dx);
+    const short ady=abs(dy);
+    if(adx>ady)
+    {
+        short yincr= dy>=0 ? 1 : -1;
+        short d=2*ady-adx;
+        short v=2*(ady-adx);
+        short w=2*ady;
+        short y=a.y();
+        if(dx>0)
+        {
+            for(short x=a.x();x<=b.x();x++)
+            {
+                if(x>=topLeft.x() && x<=bottomRight.x() && y>=topLeft.y() && y<=bottomRight.y())
+                    surface.setPixel(Point(x,y),c);
+                if(d>0)
+                {
+                    y+=yincr;
+                    d+=v;
+                } else d+=w;
+            }
+        } else {
+            for(short x=a.x();x>=b.x();x--)
+            {
+                if(x>=topLeft.x() && x<=bottomRight.x() && y>=topLeft.y() && y<=bottomRight.y())
+                    surface.setPixel(Point(x,y),c);
+                if(d>0)
+                {
+                    y+=yincr;
+                    d+=v;
+                } else d+=w;
+            }
+        }
+    } else {
+        short xincr= dx>=0 ? 1 : -1;
+        short d=2*adx-ady;
+        short v=2*(adx-ady);
+        short w=2*adx;
+        short x=a.x();
+        if(dy>0)
+        {
+            for(short y=a.y();y<=b.y();y++)
+            {
+                if(x>=topLeft.x() && x<=bottomRight.x() && y>=topLeft.y() && y<=bottomRight.y())
+                    surface.setPixel(Point(x,y),c);
+                if(d>0)
+                {
+                    x+=xincr;
+                    d+=v;
+                } else d+=w;
+            }
+        } else {
+            for(short y=a.y();y>=b.y();y--)
+            {
+                if(x>=topLeft.x() && x<=bottomRight.x() && y>=topLeft.y() && y<=bottomRight.y())
+                    surface.setPixel(Point(x,y),c);
                 if(d>0)
                 {
                     x+=xincr;
