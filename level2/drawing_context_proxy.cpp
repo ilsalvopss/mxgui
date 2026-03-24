@@ -129,18 +129,6 @@ Font FullScreenDrawingContextProxy::getFont() const
     return dc.getFont();
 }
 
-//
-// class BackgroudDrawingContextProxy
-//
-
-
-
-//
-// class ForegroundDrawingContextProxy
-//
-
-
-
 } //namespace miosix
 
 #endif //MXGUI_LEVEL_2

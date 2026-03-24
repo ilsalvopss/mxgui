@@ -50,17 +50,18 @@ public:
     /**
      * Constructor
      */
-    DrawingContextProxy() {}
+    DrawingContextProxy() = default;
     
     /**
      * Write text to the display. If text is too long it will be truncated
      * \param p point where the upper left corner of the text will be printed
      * \param text, text to print.
+     * TODO: maybe std::string_view?
      */
     virtual void write(Point p, const char *text)=0;
 
     /**
-     *  Write part of text to the display
+     * Write part of text to the display
      * \param p point of the upper left corner where the text will be drawn.
      * Negative coordinates are allowed, as long as the clipped view has
      * positive or zero coordinates
@@ -182,9 +183,8 @@ public:
      */
     virtual ~DrawingContextProxy();
     
-private:
-    DrawingContextProxy(const DrawingContextProxy&);
-    DrawingContextProxy& operator=(const DrawingContextProxy&);
+    DrawingContextProxy(const DrawingContextProxy&) = delete;
+    DrawingContextProxy& operator=(const DrawingContextProxy&) = delete;
 };
 
 /**
@@ -332,41 +332,219 @@ private:
 };
 
 /**
- * \ingroup pub_iface_2
- * This drawing context is used for applications that have exactly one popup
- * window in foreground. It avoids drawing over the area where the popup is
- * placed. Support for more than one rectangular foreground window is not
- * imlemented yet.
+ * This proxy forwards operations to the underlying DrawingContext, with two main differences:
+ * 1) it only draws in a specific area of the screen, defined by clippingRect
+ * 2) it translates all coordinates by origin
  */
-class BackgroudDrawingContextProxy : public DrawingContextProxy
-{
-public:
-    /**
-     * Constructor
-     * \param display the display on which you want to draw
-     * \param da drawing area of popup
-     */
-    BackgroudDrawingContextProxy(Display& display, Rect da);
-    
-    //TODO
-};
+class ClippedDrawingContext final : public DrawingContextProxy { // FIXME
+    const Rect clippingRect;
+    const Point origin;
+    DrawingContext& dc;
 
-/**
- * \ingroup pub_iface_2
- * This drawing context is used for a popup window in foreground. It avoids
- * drawing outside the area where the popup is placed.
- */
-class ForegroundDrawingContextProxy : public DrawingContextProxy
-{
 public:
+    ClippedDrawingContext(DrawingContext& dc, Rect r, Point origin = {0,0}) : clippingRect(std::move(r)),
+                                                                                  origin(origin), dc(dc) {}
+
     /**
-     * Constructor
-     * \param display the display on which you want to draw
-     * \param da drawing area of popup
+     * Write text to the display in our clipping region. If text is too long it will be truncated
+     * \param p point where the upper left corner of the text will be printed.
+     * \param text, text to print.
      */
-    ForegroundDrawingContextProxy(Display& display, Rect da);
-    
-    //TODO
+    void write(const Point p, const char *text) override {
+        if (!clippingRect.contains(origin + p))
+            return; // text is completely outside clippingRect, don't write anything
+
+        dc.clippedWrite(origin + p, clippingRect.first, clippingRect.second, text);
+    }
+
+    /**
+     * Write part of text to the display in our clipping region
+     * \param p point of the upper left corner where the text will be drawn.
+     * \param a Upper left corner of clipping rectangle
+     * \param b Lower right corner of clipping rectangle
+     * \param text text to write
+     */
+    void clippedWrite(const Point p, const Point a, const Point b, const char *text) override {
+        const auto clipped_a = clippingRect.intersection({origin + a, origin + b});
+        if (clipped_a.empty())
+            return; // requested clipping area is completely outside clippingRect, don't write anything
+        if (!clippingRect.contains(origin + p))
+            return; // text is completely outside clippingRect, don't write anything
+
+        dc.clippedWrite(origin + p, clipped_a.first, clipped_a.second, text);
+    }
+
+    /**
+     * Clear the clippingRect and fill it with the desired color
+     * \param color fill color
+     */
+    void clear(const Color color) override {
+        dc.clear(clippingRect.first, clippingRect.second, color);
+    }
+
+    /**
+     * Clear an area of the clippingRect
+     * \param p1 upper left corner of area to clear
+     * \param p2 lower right corner of area to clear
+     * \param color fill color
+     */
+    void clear(const Point p1, const Point p2, const Color color) override {
+        const auto intersection = clippingRect.intersection({origin + p1, origin + p2});
+        if (intersection.empty())
+            return; // area to clear is completely outside clippingRect, don't clear anything
+
+        dc.clear(intersection.first, intersection.second, color);
+    }
+
+    /**
+     * Draw a line between point a and point b, with color c
+     * \param a first point
+     * \param b second point
+     * \param color line color
+     */
+    void line(const Point a, const Point b, const Color color) override {
+        //dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
+    }
+
+    /**
+     * Draw an horizontal line on the clippingRect.
+     * Instead of line(), this member function takes an array of colors to be
+     * able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors whose size must be b.x()-a.x()+1
+     * \param length length of colors array.
+     * p.x()+length must be <= clippingRect's width
+     */
+    void scanLine(const Point p, const Color *colors, const unsigned short length) override {
+        const auto absolute_p = origin + p;
+        if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() >= clippingRect.second.y())
+            return; // line is completely outside clippingRect, don't draw anything
+
+        auto clipped_length = length;
+        if (absolute_p.x() < clippingRect.first.x()) {
+            // line starts before clippingRect, skip the first pixels
+            const auto skip = clippingRect.first.x() - absolute_p.x();
+
+            colors += skip;
+            clipped_length -= skip;
+        }
+        if (absolute_p.x() + length >= clippingRect.second.x()) {
+            // line ends after clippingRect, reduce the length
+            clipped_length = clippingRect.second.x() - absolute_p.x();
+        }
+
+        dc.scanLine(absolute_p, colors, clipped_length);
+    }
+
+    /**
+     * \return a buffer of length equal to this->getWidth() that can be used to
+     * render a scanline.
+     * TODO: this could require to implement some sort of buffering here... let me think about it
+     */
+    Color *getScanLineBuffer() override {
+        return dc.getScanLineBuffer() + clippingRect.first.x();
+    }
+
+    /**
+     * Draw the content of the last getScanLineBuffer() on an horizontal line
+     * on the screen.
+     * \param p starting point of the line
+     * \param length length of colors array.
+     * p.x()+length must be <= display.width()
+     * TODO: this could require to implement some sort of buffering here... let me think about it
+     */
+    void scanLineBuffer(const Point p, const unsigned short length) override {
+        dc.scanLineBuffer(clippingRect.first + p, length);
+    }
+
+    /**
+     * Draw an image on the screen
+     * \param p point of the upper left corner where the image will be drawn
+     * \param img image to draw
+     */
+    void drawImage(const Point p, const ImageBase& img) override {
+        dc.clippedDrawImage(origin + p, clippingRect.first, clippingRect.second, img);
+    }
+
+    /**
+     * Draw part of an image on the screen
+     * \param p point of the upper left corner where the image will be drawn.
+     * Negative coordinates are allowed, as long as the clipped view has
+     * positive or zero coordinates
+     * \param a Upper left corner of clipping rectangle
+     * \param b Lower right corner of clipping rectangle
+     * \param img Image to draw
+     */
+    void clippedDrawImage(const Point p, const Point a, const Point b, const ImageBase& img) override {
+        const auto intersection = clippingRect.intersection({origin + a, origin + b});
+        if (intersection.empty())
+            return; // image is completely outside clippingRect, don't draw anything
+
+        dc.clippedDrawImage(origin + p, intersection.first, intersection.second, img);
+    }
+
+    /**
+     * Draw a rectangle (not filled) with the desired color
+     * \param a upper left corner of the rectangle
+     * \param b lower right corner of the rectangle
+     * \param c color of the line
+     */
+    void drawRectangle(const Point a, const Point b, const Color c) override {
+        const auto intersection = clippingRect.intersection({origin + a, origin + b});
+        if (intersection.empty())
+            return; // rectangle is completely outside clippingRect, don't draw anything
+
+        dc.drawRectangle(intersection.first, intersection.second, c);
+    }
+
+    /**
+     * \return the clippingRect's height
+     */
+    [[nodiscard]] short int getHeight() const override {
+        return clippingRect.second.y() - clippingRect.first.y();
+    }
+
+    /**
+     * \return the clippingRect's width
+     */
+    [[nodiscard]] short int getWidth() const override {
+        return clippingRect.second.x() - clippingRect.first.x();
+    }
+
+    /**
+     * Set colors used for writing text
+     * \param colors a pair where first is the foreground color, and second the
+     * background one
+     */
+    void setTextColor(const std::pair<Color,Color> colors) override {
+        // FIXME: this is not really ideal, as it changes the text color of the whole display, but it's better than nothing
+        dc.setTextColor(colors);
+    }
+
+    /**
+     * \return a pair with the foreground and background color
+     */
+    [[nodiscard]] std::pair<Color,Color> getTextColor() const override {
+        // FIXME: this is not really ideal, as it returns the text color of the whole display, but it's better than nothing
+        return dc.getTextColor();
+    }
+
+    /**
+     * Set the font used for writing text
+     * \param font new font
+     */
+    void setFont(const Font& font) override {
+        // FIXME: this is not really ideal, as it changes the font of the whole display, but it's better than nothing
+        dc.setFont(font);
+    }
+
+    /**
+     * \return the current font used to draw text
+     */
+    [[nodiscard]] Font getFont() const override {
+        // FIXME: this is not really ideal, as it returns the font of the whole display, but it's better than nothing
+        return dc.getFont();
+    }
 };
 
 } //namespace mxgui
