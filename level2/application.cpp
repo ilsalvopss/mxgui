@@ -56,11 +56,8 @@ void Drawable::enqueueForRedraw()
     w->needsPartialRedraw(this);
 }
 
-void Drawable::onEvent(Event e) {}
-
-Drawable::~Drawable()
-{
-    w->removeDrawable(this);
+void Drawable::onEvent(Badge<Window>, Event e) {
+    // unhandled event
 }
 
 //

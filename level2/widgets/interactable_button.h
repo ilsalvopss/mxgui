@@ -121,7 +121,7 @@ public:
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
-    virtual void onDraw(DrawingContextProxy& dc)=0;
+    void onDraw(Badge<Window>, DrawingContextProxy& dc) override =0;
 
     /**
      * Destructor

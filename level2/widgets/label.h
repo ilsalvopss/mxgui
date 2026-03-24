@@ -127,7 +127,7 @@ public:
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
-    virtual void onDraw(DrawingContextProxy& dc);
+    virtual void onDraw(Badge<Window>, DrawingContextProxy& dc);
     
 private:
     std::string text; ///< Text of the label

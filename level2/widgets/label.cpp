@@ -56,7 +56,7 @@ void Label::setColors(std::pair<Color,Color> colors)
     enqueueForRedraw();
 }
 
-void Label::onDraw(DrawingContextProxy& dc)
+void Label::onDraw(Badge<Window>, DrawingContextProxy& dc)
 {
     Rect da=getDrawArea();
     Font font=dc.getFont();

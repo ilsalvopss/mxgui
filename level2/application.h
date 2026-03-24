@@ -74,30 +74,30 @@ public:
     /**
      * Constructor
      * \param w window to which this object belongs
-     * \param da area on screen occupied by this object
+     * \param da area of the window occupied by this object
      */
     Drawable(Window *w, Rect da);
     
     /**
      * Constructor
      * \param w window to which this object belongs
-     * \param p upper left point of the drawable
+     * \param p upper left point of the drawable in the window
      * \param width width of the drawable
      * \param height height of drawable
      */
     Drawable(Window *w, Point p, short width, short height);
-    
+
     /**
-     * Signal that this object needs to be redrawn
+     * \return the draw area of the object
      */
-    void enqueueForRedraw();
-    
+    [[nodiscard]] Rect getDrawArea() const { return da; }
+
     /**
      * \internal
      * Called after onDraw() by the parent window when the Drawable is being
      * redrawn, do not call this directly.
      */
-    void redrawDone() { needRedraw=false; }
+    void redrawDone(Badge<Window>) { needRedraw=false; }
     
     /**
      * \return true if this Drawable needs to be redrawn 
@@ -110,7 +110,7 @@ public:
      * Window, do not call this directly.
      * \param dc drawing context used to draw the object
      */
-    virtual void onDraw(DrawingContextProxy& dc)=0;
+    virtual void onDraw(Badge<Window>, DrawingContextProxy& dc)=0;
     
     /**
      * \internal
@@ -118,14 +118,12 @@ public:
      * parent Window, do not call this directly.
      * \param e event
      */
-    virtual void onEvent(Event e);
+    virtual void onEvent(Badge<Window>, Event e);
     
     /**
      * Destructor
      */
     virtual ~Drawable();
-
-    bool visible(const Rect& drawArea) const { return !da.intersection(drawArea).empty(); }
     
 protected:
     /**
@@ -133,11 +131,6 @@ protected:
      */
     // TODO: check what this is used for
     Window *getWindow() { return w; }
-    
-    /**
-     * \return the draw area of the object
-     */
-    [[nodiscard]] Rect getDrawArea() const { return da; }
 
     /**
      * Signal that this object needs to be redrawn

@@ -60,7 +60,7 @@ public:
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
-    virtual void onDraw(DrawingContextProxy& dc);
+    void onDraw(Badge<Window>, DrawingContextProxy& dc) override;
 
 protected:
     bool checked; ///< True if the checkbox is checked
@@ -71,16 +71,16 @@ private:
     /**
      * Overridden this member function to reset the colors of the button.
     */
-    void resetState();
+    void resetState() override;
     /** 
      * Overridden this member function to set the colors of the button when it is pressed
     */
-    void buttonDown();
+    void buttonDown() override;
 
     /** 
      * Overridden this member function to also set the colors of the button when it is released.
     */
-    void buttonUp();
+    void buttonUp() override;
 
     /**
      * Function that handles the checkbox state change

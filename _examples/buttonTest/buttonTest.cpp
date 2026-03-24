@@ -68,12 +68,14 @@ ENTRY()
         w.get()->~Window();
     });
 
-    
-    InputHandler::instance().registerEventCallback([w](){
+    // This must be wrong. No user code should register a callback to the input handler, as this will break the window manager.
+    // The window manager should be the only one registering a callback to the input handler, and it should do it in its constructor.
+    // If user code needs to be notified of an event, it should do it through the event loop of the window, which is what it's for.
+    /*InputHandler::instance().registerEventCallback([w](){
         Event e = InputHandler::instance().popEvent();
         //cout<<"Event: "<<e.getEvent()<<endl;
         w.get()->postEvent(e);
-    });
+    });*/
     WindowManager::instance().start(w);
     w.get()->eventLoop();
 
