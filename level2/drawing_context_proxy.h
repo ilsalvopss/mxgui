@@ -413,22 +413,27 @@ public:
     void scanLine(const Point p, const Color *colors, const unsigned short length) override {
         const auto absolute_p = origin + p;
         if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() >= clippingRect.second.y())
-            return; // line is completely outside clippingRect, don't draw anything
+            return; // line is completely outside clippingRect (vertically), don't draw anything
 
-        auto clipped_length = length;
-        if (absolute_p.x() < clippingRect.first.x()) {
+        auto x0 = absolute_p.x();
+        auto x1 = absolute_p.x() + length;
+
+        if (x1 <= clippingRect.first.x() || x0 >= clippingRect.second.x())
+            return; // line is completely outside clippingRect (horizontally), don't draw anything
+
+        if (x0 < clippingRect.first.x()) {
             // line starts before clippingRect, skip the first pixels
-            const auto skip = clippingRect.first.x() - absolute_p.x();
-
+            const auto skip = clippingRect.first.x() - x0;
             colors += skip;
-            clipped_length -= skip;
-        }
-        if (absolute_p.x() + length >= clippingRect.second.x()) {
-            // line ends after clippingRect, reduce the length
-            clipped_length = clippingRect.second.x() - absolute_p.x();
+
+            // update x0 to the first pixel inside clippingRect
+            x0 = clippingRect.first.x();
         }
 
-        dc.scanLine(absolute_p, colors, clipped_length);
+        if (x1 > clippingRect.second.x()) // line ends after clippingRect
+            x1 = clippingRect.second.x(); // update x1 to the last pixel inside clippingRect
+
+        dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0);
     }
 
     /**
