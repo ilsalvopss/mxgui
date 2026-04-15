@@ -26,7 +26,7 @@
  ***************************************************************************/
 
 #pragma once
-
+#include <ostream>
 namespace mxgui {
 
 /**
@@ -102,6 +102,11 @@ public:
     */
     [[nodiscard]] bool within(const Point& b, const Point& c) const {
         return x_ >= b.x_ && y_ >= b.y_ && x_ < c.x_ && y_ < c.y_;
+    }
+
+    // debug print for std::cout <<
+    friend std::ostream& operator<<(std::ostream& os, const Point& p) {
+        return os << "(" << p.x_ << "," << p.y_ << ")";
     }
 
     //Uses default copy constructor and operator=
