@@ -351,9 +351,6 @@ public:
      * \param text, text to print.
      */
     void write(const Point p, const char *text) override {
-        if (!clippingRect.contains(origin + p))
-            return; // text is completely outside clippingRect, don't write anything
-
         dc.clippedWrite(origin + p, clippingRect.first, clippingRect.second, text);
     }
 
@@ -368,8 +365,6 @@ public:
         const auto clipped_a = clippingRect.intersection({origin + a, origin + b});
         if (clipped_a.empty())
             return; // requested clipping area is completely outside clippingRect, don't write anything
-        if (!clippingRect.contains(origin + p))
-            return; // text is completely outside clippingRect, don't write anything
 
         dc.clippedWrite(origin + p, clipped_a.first, clipped_a.second, text);
     }
