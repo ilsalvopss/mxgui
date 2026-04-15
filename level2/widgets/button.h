@@ -80,6 +80,14 @@ protected:
      * Overridden this member function to also set the colors of the button when it is released.
     */
     virtual void buttonUp();
+
+private:
+    /**
+     * \internal
+     * Overridden this member function to draw the object.
+     * \param dc drawing context used to draw the object
+     */
+    void onDraw(DrawingContextProxy& dc) override;
 };
 
 } //namesapce mxgui

@@ -121,15 +121,15 @@ public:
         if(overrideColors) enqueueForRedraw();
         overrideColors=false;
     }
-   
+
+private:
     /**
      * \internal
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
-    virtual void onDraw(Badge<Window>, DrawingContextProxy& dc);
-    
-private:
+   void onDraw(DrawingContextProxy& dc) override;
+
     std::string text; ///< Text of the label
     std::pair<Color,Color> colors; ///< Colors, if overridden
     Alignment::Alignment_ xAlign; ///< Text alignment along x axis

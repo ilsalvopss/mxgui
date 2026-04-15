@@ -55,17 +55,17 @@ public:
     */
     virtual bool isChecked();
 
+protected:
+    bool checked; ///< True if the checkbox is checked
+    
+private:
     /**
      * \internal
      * Overridden this member function to draw the object.
      * \param dc drawing context used to draw the object
      */
-    void onDraw(Badge<Window>, DrawingContextProxy& dc) override;
+    void onDraw(DrawingContextProxy& dc) override;
 
-protected:
-    bool checked; ///< True if the checkbox is checked
-    
-private:
     Point labelStartingPoint; ///< Upper left point of the label
     //Private functions
     /**

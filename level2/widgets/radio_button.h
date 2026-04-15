@@ -73,6 +73,13 @@ public:
 private:
     RadioGroup* group; ///< The group to which this radio button belongs
     void check();///< Overridden to call the RadioGroup::setChecked
+
+    /**
+     * \internal
+     * Overridden this member function to draw the object.
+     * \param dc drawing context used to draw the object
+     */
+    void onDraw(DrawingContextProxy& dc) override;
 };
 
 class RadioGroup

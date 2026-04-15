@@ -36,6 +36,22 @@ using namespace std;
 namespace mxgui {
 
 //
+// class DrawableOwner
+//
+
+void DrawableOwner::remove(const Drawable& d){
+    const auto rectBeingRemoved = d.getDrawArea();
+
+    // this is probably a bit slow.. but Drawable removal? seems pretty rare!
+    {
+        std::scoped_lock lock(drawables_mutex);
+        drawables.remove_if([&d](const std::unique_ptr<Drawable>& ptr) { return ptr.get() == &d; });
+    }
+
+    needsRedrawForRect(rectBeingRemoved);
+}
+
+//
 // class Drawable
 //
 

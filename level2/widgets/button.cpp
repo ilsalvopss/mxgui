@@ -84,7 +84,7 @@ void Button::buttonUp()
     InteractableButton::buttonUp();
 }
 
-void Button::onDraw(Badge<Window>, DrawingContextProxy& dc)
+void Button::onDraw(DrawingContextProxy& dc)
 {
     Rect da=getDrawArea();
     dc.clear(da.first,da.second,colors.second);

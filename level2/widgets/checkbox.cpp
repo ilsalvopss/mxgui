@@ -83,7 +83,7 @@ bool CheckBox::isChecked()
     return this->checked;
 }
 
-void CheckBox::onDraw(Badge<Window>, DrawingContextProxy& dc)
+void CheckBox::onDraw(DrawingContextProxy& dc)
 {
     Rect da=getDrawArea();
     dc.clear(da.first,da.second,colors.second);

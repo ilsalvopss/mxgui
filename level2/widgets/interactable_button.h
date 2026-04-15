@@ -114,14 +114,7 @@ public:
             this->buttonUp();
         }
     
-    } 
-    
-    /**
-     * \internal
-     * Overridden this member function to draw the object.
-     * \param dc drawing context used to draw the object
-     */
-    void onDraw(Badge<Window>, DrawingContextProxy& dc) override =0;
+    }
 
     /**
      * Destructor
@@ -129,6 +122,13 @@ public:
     ~InteractableButton() = default;
     
 private:
+    /**
+     * \internal
+     * Overridden this member function to draw the object.
+     * \param dc drawing context used to draw the object
+     */
+    void onDraw(DrawingContextProxy& dc) override =0;
+
     std::function<void ()> callback; ///< Wrapper to the function to be called when the button is pressed
     
 protected:
