@@ -27,14 +27,17 @@
 
 #pragma once
 
+#include <utility>
 #include <vector>
 #include <list>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include "mxgui_settings.h"
 #include "display.h"
 #include "input.h"
 #include "drawing_context_proxy.h"
+#include "misc_inst.h"
 #include "../badge.h"
 
 #ifdef MXGUI_LEVEL_2
@@ -59,9 +62,13 @@ public:
      * \param background background color
      * \param font default font
      */
-    WindowPreferences(Color foreground, Color background, Font font)
-            : foreground(foreground), background(background), font(font) {}
+    explicit WindowPreferences(short width = 300, short height = 300, Color foreground = white,
+                               Color background = black, Font font = defaultFont)
+                               : width(width), height(height), foreground(foreground), background(background),
+                                 font(font) {}
 
+    short width;
+    short height;
     Color foreground; ///< Foreground color
     Color background; ///< Background color
     Font font;        ///< Default font
