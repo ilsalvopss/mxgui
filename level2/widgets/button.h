@@ -36,7 +36,7 @@ namespace mxgui::widgets {
 /**
  * A basic interactive Button.
  */
-class Button : public InteractableButton
+class Button : public InteractableButton, DrawableOwner
 {
 public:
     /**
@@ -46,26 +46,20 @@ public:
      * \param da area on screen occupied by this object
      * \param text text written in the Button
      */
-    Button(Window *w, Rect da, const std::string& text="");
+    Button(BadgedRef<DrawableOwner>&& owner, const Rect& da, const std::string& text="");
     
     /**
      * Constructor
      * The object will be immediately enqueued for redraw
-     * \param w window to which this object belongs
+     * \param owner DrawableOwner to which this object belongs
      * \param p upper left point of the button
      * \param width width of the button
      * \param height height of the button
      * \param text text written in the button
      */
-    Button(Window *w, Point p, short width, short height, const std::string& text="");
-    
-    /**
-     * \internal
-     * Overridden this member function to draw the object.
-     * \param dc drawing context used to draw the object
-     */
-    void onDraw(Badge<Window>, DrawingContextProxy& dc) override;
-    
+    Button(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const std::string& text="");
+
+    void needsRedrawForRect(const Rect& r) override;
 protected:
     /** 
      * Overridden this member function to set the colors of the button when it is pressed

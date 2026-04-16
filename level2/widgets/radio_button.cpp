@@ -79,8 +79,8 @@ RadioButton* RadioGroup::getChecked()
 // class RadioButton
 //
 
-RadioButton::RadioButton(Window *w,RadioGroup *group, Point p, short dimension, const string& text)
-    : CheckBox(w,p,dimension,text,false)
+RadioButton::RadioButton(BadgedRef<Window>&& w,RadioGroup *group, Point p, short dimension, const string& text)
+    : CheckBox(std::move(w),p,dimension,text,false)
 {
     this->group=group;
     this->group->addRadioButton(this);

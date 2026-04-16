@@ -48,7 +48,7 @@ public:
      * \param da area on screen occupied by this object
      * \param text text written in the Label
      */
-    Label(Window *w, Rect da, const std::string& text="");
+    Label(BadgedRef<DrawableOwner>&& owner, Rect da, const std::string& text="");
     
     /**
      * Constructor
@@ -59,7 +59,7 @@ public:
      * \param height height of the text label
      * \param text text written in the Label
      */
-    Label(Window *w, Point p, short width, short height, const std::string& text="");
+    Label(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const std::string& text="");
     
     /**
      * \return the text being displayed 

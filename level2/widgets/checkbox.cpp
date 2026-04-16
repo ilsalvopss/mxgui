@@ -34,14 +34,14 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-CheckBox::CheckBox(Window *w, Point p, short dimension, const string& text, bool checked)
-    : InteractableButton(w,Rect(p,Point(p.x()+dimension,p.y()+dimension)))
+CheckBox::CheckBox(BadgedRef<Window> window, Point p, short dimension, const string& text, bool checked)
+    : InteractableButton(window,Rect(p,Point(p.x()+dimension,p.y()+dimension)))
 {
-    int textLen =w->getPreferences().font.calculateLength(text.c_str());
+    int textLen =window.get().getPreferences().font.calculateLength(text.c_str());
     this->checked=checked;
     this->colors=make_pair(black,lightGrey);
     this->labelStartingPoint = Point(p.x()+dimension+4,p.y());
-    this->text=new Label(w,this->labelStartingPoint,textLen,dimension,text);
+    this->text = &makeDrawable<Label>(this->labelStartingPoint,textLen,dimension,text);
     this->text->setXAlignment(Alignment::LEFT);
     this->text->setYAlignment(Alignment::CENTER);
     enqueueForRedraw();
@@ -96,6 +96,8 @@ void CheckBox::onDraw(DrawingContextProxy& dc)
         dc.line(innerPointTl,innerPointBr,black);
         dc.line(Point(innerPointTl.x(),innerPointBr.y()),Point(innerPointBr.x(),innerPointTl.y()),black);
     }
+
+    text->draw<CheckBox>({}, dc);
 }
 
 } //namespace mxgui

@@ -51,14 +51,7 @@ public:
      * \param dimension width of the CheckBox ( it's a square )
      * \param text label of the checkbox
      */
-    RadioButton(Window *w,RadioGroup *group, Point p, short dimension=15, const std::string& text="");
-
-    /**
-     * \internal
-     * Overridden this member function to draw the object.
-     * \param dc drawing context used to draw the object
-     */
-    virtual void onDraw(DrawingContextProxy& dc);
+    RadioButton(BadgedRef<Window>&& owner, RadioGroup *group, Point p, short dimension=15, const std::string& text="");
 
     /**
      * Returns the string of the label

@@ -35,15 +35,15 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-Label::Label(Window* w, Rect da, const string& text)
-    : Drawable(w,da), text(text), xAlign(Alignment::LEFT),
+Label::Label(BadgedRef<DrawableOwner>&& owner, Rect da, const string& text)
+    : Drawable(std::move(owner), da), text(text), xAlign(Alignment::LEFT),
       yAlign(Alignment::CENTER), overrideColors(false)
 {
     enqueueForRedraw();
 }
 
-Label::Label(Window *w, Point p, short width, short height, const string& text)
-    : Drawable(w,p,width,height), text(text), xAlign(Alignment::LEFT),
+Label::Label(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const string& text)
+    : Drawable(std::move(owner),p,width,height), text(text), xAlign(Alignment::LEFT),
       yAlign(Alignment::CENTER), overrideColors(false)
 {
     enqueueForRedraw();

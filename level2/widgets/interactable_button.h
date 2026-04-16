@@ -67,8 +67,8 @@ public:
      * \param w pointer to the window containing the button
      * \param da draw area of the button
      */
-    InteractableButton(Window* w, Rect da)
-        : Drawable(w,da)
+    InteractableButton(BadgedRef<DrawableOwner>&& owner, Rect da)
+        : Drawable(std::move(owner), da)
     {
         this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
         this->innerPointBr = Point(da.second.x()-2,da.second.y()-2);

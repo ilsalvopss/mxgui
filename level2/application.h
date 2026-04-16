@@ -76,7 +76,7 @@ public:
 
 /**
  * A DrawableOwner is any object that can contain drawables, such as a Window or a Widget.
- * It provides the make() function to create drawables and register them to the owner,
+ * It provides the makeDrawable() function to create drawables and register them to the owner,
  * and the remove() function to remove them.
  *
  * It is the DrawableOwner's responsibility to manage the lifetime of the drawables it owns,
@@ -129,22 +129,6 @@ class Drawable
 {
 public:
     /**
-     * Constructor
-     * \param w window to which this object belongs
-     * \param da area of the window occupied by this object
-     */
-    Drawable(Window *w, Rect da);
-    
-    /**
-     * Constructor
-     * \param w window to which this object belongs
-     * \param p upper left point of the drawable in the window
-     * \param width width of the drawable
-     * \param height height of drawable
-     */
-    Drawable(Window *w, Point p, short width, short height);
-
-    /**
      * \return the draw area of the object
      */
     [[nodiscard]] Rect getDrawArea() const { return da; }
@@ -182,10 +166,20 @@ public:
     
 protected:
     /**
-     * \return the window
+     * Constructor
+     * \param owner DrawableOwner to which this object belongs
+     * \param da area of the window occupied by this object
      */
-    // TODO: check what this is used for
-    Window *getWindow() { return w; }
+    Drawable(BadgedRef<DrawableOwner> owner, Rect da);
+
+    /**
+     * Constructor
+     * \param owner DrawableOwner to which this object belongs
+     * \param p upper left point of the drawable in the window
+     * \param width width of the drawable
+     * \param height height of drawable
+     */
+    Drawable(BadgedRef<DrawableOwner> owner, Point p, short width, short height);
 
     /**
      * \internal
@@ -207,10 +201,9 @@ protected:
      * Signal that this object needs to be redrawn
      */
     void enqueueForRedraw();
-    
-private:
-    Window *w;       ///< Window to which this drawable belongs
-    Rect da;     ///< Area on screen occupied by this object
+
+    DrawableOwner &owner;
+    Rect da;         ///< Area on screen occupied by this object
     bool needRedraw; ///< True if this object needs to be redrawn
 };
 

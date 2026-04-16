@@ -36,7 +36,7 @@ namespace mxgui::widgets {
 /**
  * CheckBox Button.
  */
-class CheckBox : public InteractableButton
+class CheckBox : public InteractableButton, DrawableOwner
 {
 public:
     /**
@@ -48,7 +48,7 @@ public:
      * \param text label of the checkbox
      * \param checked initial state of the checkbox
      */
-    CheckBox(Window *w, Point p, short dimension=15, const std::string& text="", bool checked=false);
+    CheckBox(BadgedRef<Window> owner, Point p, short dimension=15, const std::string& text="", bool checked=false);
     
     /**
      * Returns true if the checkbox is checked

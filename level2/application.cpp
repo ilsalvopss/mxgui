@@ -55,21 +55,15 @@ void DrawableOwner::remove(const Drawable& d){
 // class Drawable
 //
 
-Drawable::Drawable(Window* w, Rect da) : w(w), da(da), needRedraw(false)
-{
-    w->addDrawable(this);
-}
+Drawable::Drawable(BadgedRef<DrawableOwner> owner, Rect da) : owner(owner), da(std::move(da)), needRedraw(false) {}
 
-Drawable::Drawable(Window *w, Point p, short width, short height)
-    : w(w), da(make_pair(p,Point(p.x()+width,p.y()+height))), needRedraw(false)
-{
-    w->addDrawable(this);
-}
+Drawable::Drawable(BadgedRef<DrawableOwner> owner, Point p, const short width, const short height)
+    : owner(owner), da(make_pair(p,Point(p.x()+width,p.y()+height))), needRedraw(false) {}
 
 void Drawable::enqueueForRedraw()
 {
     needRedraw=true;
-    w->needsPartialRedraw(this);
+    owner.needsPartialRedraw<Drawable>({}, *this);
 }
 
 void Drawable::onEvent(Badge<Window>, Event e) {

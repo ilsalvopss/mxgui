@@ -36,14 +36,13 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-Button::Button(Window* w, Rect da, const string& text)
-    : InteractableButton(w,da)
+Button::Button(BadgedRef<DrawableOwner>&& owner, const Rect& da, const string& text) : InteractableButton(std::move(owner), da)
 {
     this->innerPointTl = Point(da.first.x()+3,da.first.y()+3);
     this->innerPointBr = Point(da.second.x()-3,da.second.y()-3);
     if(text!="")
     {
-        this->text=new Label(w,Rect(innerPointTl,innerPointBr),text);
+        this->text = &makeDrawable<Label>(Rect(innerPointTl,innerPointBr),text);
         this->text->setXAlignment(Alignment::CENTER);
         this->text->setYAlignment(Alignment::CENTER);
     }
@@ -51,8 +50,8 @@ Button::Button(Window* w, Rect da, const string& text)
     
 }
 
-Button::Button(Window *w, Point p, short width, short height, const string& text)
-    : Button(w,Rect(p,Point(p.x()+width,p.y()+height)),text)
+Button::Button(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const string& text)
+               : Button(std::move(owner),Rect(p,Point(p.x()+width,p.y()+height)),text)
 {}
 
 void Button::resetState()
@@ -92,6 +91,12 @@ void Button::onDraw(DrawingContextProxy& dc)
     dc.drawImage(Point(da.second.x()-2,da.first.y()),tr);
     dc.drawImage(Point(da.first.x(),da.second.y()-2),bl);
     dc.drawImage(innerPointBr,br);
+
+    text->draw<Button>({}, dc);
+}
+
+void Button::needsRedrawForRect(const Rect& r) {
+    owner.needsPartialRedraw<Button>({}, *this);
 }
 
 }//namespace mxgui
