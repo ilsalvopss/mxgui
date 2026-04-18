@@ -57,6 +57,18 @@ typedef Color1bitlinear Color; //Only 0 and 1 allowed
 typedef unsigned char Color;
 #elif defined(MXGUI_COLOR_DEPTH_16_BIT)
 typedef unsigned short Color;
+
+/**
+ * Helper to convert RGB888 to RGB565. Necessarily lossy
+ * @param r red
+ * @param g green
+ * @param b blue
+ * @return rgb565
+ */
+constexpr Color rgb565(const unsigned char r, const unsigned char g, const unsigned char b)
+{
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3);
+}
 #endif
 
 } // namespace mxgui
