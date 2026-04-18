@@ -46,11 +46,12 @@ protected:
 
 public:
     constexpr T& get() const noexcept { return ref; }
+    constexpr T& operator*() const noexcept { return ref; }
     constexpr explicit operator T&() const noexcept { return ref; }
 
     template<typename U>
     requires std::is_convertible_v<U*, T*>
-    constexpr BadgedRef(const BadgedRef<U>& other) noexcept
+    constexpr /* not explicit by design */ BadgedRef(const BadgedRef<U>& other) noexcept
         : ref(other.ref) {}
 
     BadgedRef(const BadgedRef&) = delete;

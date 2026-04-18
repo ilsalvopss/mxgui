@@ -42,7 +42,7 @@ public:
     /**
      * Constructor
      * The object will be immediately enqueued for redraw
-     * \param w window to which this object belongs
+     * \param owner DrawableOwner to which this object belongs
      * \param da area on screen occupied by this object
      * \param text text written in the Button
      */
@@ -59,7 +59,18 @@ public:
      */
     Button(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const std::string& text="");
 
+    /**
+     * Implements DrawableOwner::needsRedrawForRect.
+     * Here we simply forward the invalidation to the parent DrawableOwner
+     * @param r rect to redraw
+     */
     void needsRedrawForRect(const Rect& r) override;
+
+    /**
+     * Implements DrawableOwner::getWindow.
+     * @return window to which this button belongs
+     */
+    Window& getWindow() override { return owner.getWindow(); }
 protected:
     /** 
      * Overridden this member function to set the colors of the button when it is pressed

@@ -51,7 +51,7 @@ public:
      * \param dimension width of the CheckBox ( it's a square )
      * \param text label of the checkbox
      */
-    RadioButton(BadgedRef<Window>&& owner, RadioGroup *group, Point p, short dimension=15, const std::string& text="");
+    RadioButton(BadgedRef<DrawableOwner> owner, RadioGroup *group, Point p, short dimension=15, const std::string& text="");
 
     /**
      * Returns the string of the label

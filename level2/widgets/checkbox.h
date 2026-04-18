@@ -36,29 +36,41 @@ namespace mxgui::widgets {
 /**
  * CheckBox Button.
  */
-class CheckBox : public InteractableButton, DrawableOwner
+class CheckBox : public InteractableButton, public DrawableOwner
 {
 public:
     /**
      * Constructor
      * The object will be immediately enqueued for redraw
-     * \param w window to which this object belongs
+     * \param owner DrawableOwner to which this object belongs
      * \param p upper left point of the CheckBox
      * \param dimension width and height of the CheckBox ( it's a square )
      * \param text label of the checkbox
      * \param checked initial state of the checkbox
      */
-    CheckBox(BadgedRef<Window> owner, Point p, short dimension=15, const std::string& text="", bool checked=false);
+    CheckBox(BadgedRef<DrawableOwner> owner, Point p, short dimension=15, const std::string& text="", bool checked=false);
     
     /**
      * Returns true if the checkbox is checked
     */
     virtual bool isChecked();
 
+    /**
+     * Implements DrawableOwner::getWindow.
+     * @return window to which this button belongs
+     */
+    Window& getWindow() override { return owner.getWindow(); }
 protected:
     bool checked; ///< True if the checkbox is checked
     
 private:
+    /**
+     * Implements DrawableOwner::needsRedrawForRect.
+     * Here we simply forward the invalidation to the parent DrawableOwner
+     * @param r rect to redraw
+     */
+    void needsRedrawForRect(const Rect& r) override;
+
     /**
      * \internal
      * Overridden this member function to draw the object.

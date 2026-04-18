@@ -79,7 +79,7 @@ RadioButton* RadioGroup::getChecked()
 // class RadioButton
 //
 
-RadioButton::RadioButton(BadgedRef<Window>&& w,RadioGroup *group, Point p, short dimension, const string& text)
+RadioButton::RadioButton(BadgedRef<DrawableOwner> w,RadioGroup *group, Point p, short dimension, const string& text)
     : CheckBox(std::move(w),p,dimension,text,false)
 {
     this->group=group;
@@ -117,6 +117,8 @@ void RadioButton::onDraw(DrawingContextProxy& dc)
     {
         dc.clear(innerPointTl,innerPointBr,black);
     }
+
+    text->draw<RadioButton>({},dc);
 }
 
 }//namespace mxgui

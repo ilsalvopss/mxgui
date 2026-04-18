@@ -34,10 +34,10 @@ using namespace std;
 
 namespace mxgui::widgets {
 
-CheckBox::CheckBox(BadgedRef<Window> window, Point p, short dimension, const string& text, bool checked)
-    : InteractableButton(window,Rect(p,Point(p.x()+dimension,p.y()+dimension)))
+CheckBox::CheckBox(BadgedRef<DrawableOwner> owner, Point p, short dimension, const string& text, bool checked)
+    : InteractableButton(std::move(owner),Rect(p,Point(p.x()+dimension,p.y()+dimension)))
 {
-    int textLen =window.get().getPreferences().font.calculateLength(text.c_str());
+    int textLen = (*owner).getWindow().getPreferences().font.calculateLength(text.c_str());
     this->checked=checked;
     this->colors=make_pair(black,lightGrey);
     this->labelStartingPoint = Point(p.x()+dimension+4,p.y());
@@ -98,6 +98,10 @@ void CheckBox::onDraw(DrawingContextProxy& dc)
     }
 
     text->draw<CheckBox>({}, dc);
+}
+
+void CheckBox::needsRedrawForRect(const Rect& r) {
+    owner.needsPartialRedraw<CheckBox>({}, *this);
 }
 
 } //namespace mxgui

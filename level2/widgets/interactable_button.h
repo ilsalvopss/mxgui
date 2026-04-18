@@ -175,17 +175,6 @@ protected:
     {
         if(callback) callback();
     }
-
-    /**
-     * Allows subclasses to modify Button drawArea without exposing it
-     * \return the draw area of the button
-     * 
-     */
-    //TODO: what?
-    virtual Rect getDrawArea() const
-    {
-        return Drawable::getDrawArea();
-    }
 };
 
 } //namesapce mxgui

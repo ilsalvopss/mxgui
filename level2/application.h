@@ -104,6 +104,8 @@ public:
         return *raw_drawable;
     }
 
+    virtual Window& getWindow() = 0;
+
     void remove(const Drawable& d);
 
     /**
