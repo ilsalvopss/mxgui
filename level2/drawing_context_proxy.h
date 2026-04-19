@@ -398,7 +398,7 @@ public:
      * \param color line color
      */
     void line(const Point a, const Point b, const Color color) override {
-        //dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
+        dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
     }
 
     /**

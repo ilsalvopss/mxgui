@@ -160,10 +160,10 @@ void DisplayImpl::line(Point a, Point b, Color color)
 void DisplayImpl::clippedLine(Point a, Point b, Point c, Point d, Color color) {
     //Qt backend is meant to catch errors, so be bastard
     if(a.x()<0 || a.y()<0 || b.x()<0 || b.y()<0 || c.x()<0 || c.y()<0 || d.x()<0 || d.y()<0)
-        throw(logic_error("DisplayImpl::line: negative value in point"));
+        throw(logic_error("DisplayImpl::clippedLine: negative value in point"));
     if(a.x()>=width || a.y()>=height || b.x()>=width || b.y()>=height ||
         c.x()>=width || c.y()>=height || d.x()>=width || d.y()>=height)
-        throw(logic_error("DisplayImpl::line: point outside display bounds"));
+        throw(logic_error("DisplayImpl::clippedLine: point outside display bounds"));
 
     Line::draw(*this, a, b, color, c, d);
     beginPixelCalled=false;
