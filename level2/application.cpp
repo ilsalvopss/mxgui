@@ -74,124 +74,82 @@ void Drawable::onEvent(Badge<Window>, Event e) {
 // class Window
 //
 
-Window::Window() : prefs(white,black,defaultFont), redrawNeeded(false)
-{
-    pthread_mutex_init(&mutex,NULL);
-    pthread_cond_init(&cond,NULL);
-}
-
-void Window::addDrawable(Drawable* d)
-{
-    PthreadLock lock(mutex);
-    drawables.push_back(d);
-}
-
-void Window::removeDrawable(Drawable* d)
-{
-    PthreadLock lock(mutex);
-    drawables.remove(d); //O(n) removal, space-speed tradeoff
-}
-
-void Window::needsPartialRedraw(Drawable* d)
-{
-    PthreadLock lock(mutex);
-    if(redrawNeeded) return;
-    //This function needs to be callable also by a thread different from the one
-    //that runs the event loop, so we need to post an event to wake the event
-    //loop thread
-    postEventImpl(Event(EventType::WindowPartialRedraw));
-    redrawNeeded=true;
-}
-
-void Window::postEvent(Event e)
-{
-    PthreadLock lock(mutex);
-    postEventImpl(e);
-}
-
-void Window::eventLoop()
-{
-    for(;;)
-    {
-        Event e=getEvent();
-        
-        if(e.getEvent()==EventType::WindowQuit) return;
-        if(e.getEvent()==EventType::WindowPartialRedraw)
-        {
-            FullScreenDrawingContextProxy dc(DisplayManager::instance().getDisplay());//FIXME: get it fron the window manager
-            dc.setTextColor(make_pair(prefs.foreground,prefs.background));
-            for(list<Drawable*>::iterator it=drawables.begin();
-                it!=drawables.end();++it)
-            {
-                
-                if((*it)->needsRedraw()==false) continue;
-                (*it)->onDraw(dc);
-                (*it)->redrawDone();
-            }
-            //Filter out this event
-            continue;
-        }
-        /*if(e.getEvent()==EventType::WindowForeground)
-        {
-            FullScreenDrawingContextProxy dc(DisplayManager::instance().getDisplay());//FIXME: get it fron the window manager
-            dc.setTextColor(make_pair(prefs.foreground,prefs.background));
-            //dc.clear(prefs.background);
-            for(list<Drawable*>::iterator it=drawables.begin();
-                it!=drawables.end();++it)
-            {
-                (*it)->onDraw(dc);
-                (*it)->redrawDone();
-            }
-            //Do not filter this out
-        }*/
-        //Forward event. For now we do not yet have a way for a Drawable to
-        //register only for a certain class of events, such as touch events only
-        //in their draw area, but we simply forward each event to all Drawables,
-        //this is a space-speed tradeoff
-        for(list<Drawable*>::iterator it=drawables.begin();
-            it!=drawables.end();++it)
-                (*it)->onEvent(e);
+void Window::Handle::bringToFront() const {
+    if (const auto locked = w.lock()) {
+        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), WindowManager::WMMessage::Kind::BringToFront));
     }
 }
 
-void Window::postEventImpl(Event e)
-{
-    events.push_back(e);
-    pthread_cond_signal(&cond);
-}
-
-Event Window::getEvent()
-{
-    PthreadLock lock(mutex);
-    for(;;)
-    {
-        if(events.empty()==false)
-        {
-            Event result=events.front();
-            events.pop_front();
-            //Filter out WindowPartialRedraw that is done through redrawNeeded
-            if(result.getEvent()==EventType::WindowPartialRedraw) continue;
-            return result;
-        } else {
-            //No event, check if we need to redraw. The idea behind this is:
-            //in case more than one event show up, we first process them all
-            //and redraw after all events if redrawNeeded is true
-            if(redrawNeeded)
-            {
-                redrawNeeded=false;
-                return Event(EventType::WindowPartialRedraw);
-            } else {
-                //No event and no redraw needed, wait for an event
-                pthread_cond_wait(&cond,&mutex);
-            }
-        }
+void Window::Handle::close() const {
+    if (const auto locked = w.lock()) {
+        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), WindowManager::WMMessage::Kind::Close));
     }
 }
 
-Window::~Window()
+Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
+    boundingBox( p, {static_cast<short int>(p.x() + prefs.width), static_cast<short int>(p.y() + prefs.height)} )
 {
-    pthread_mutex_destroy(&mutex);
-    pthread_cond_destroy(&cond);
+    makeDrawable<SolidBackground>(
+        Rect { Point{0, 0}, Point{ prefs.width, prefs.height } },
+        prefs.background
+        );
+}
+
+void Window::clippedRedraw(DrawingContext& dc, const std::list<Rect>& requestedRects) {
+    for (const auto& requested: requestedRects) {
+        for (const auto& visible : visibleRects) {
+            auto requested_and_visible = requested.intersection(visible);
+            if (requested_and_visible.empty())
+                continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
+
+            const auto localRegion = requested_and_visible.translate(-position);
+            auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
+            for (auto& drawable: drawables) {
+                if (!drawable->needsRedraw())
+                    continue;
+
+                if (drawable->getDrawArea().intersection(localRegion).empty())
+                    continue;
+
+                drawable->draw<Window>({}, clippedDc);
+            }
+        }
+    }
+
+    for (const auto& drawable: drawables) {
+        if (drawable->needsRedraw())
+            drawable->redrawDone<Window>({});
+    }
+}
+
+void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRects) {
+    for (const auto& requested: requestedRects) {
+        for (const auto& visible : visibleRects) {
+            auto requested_and_visible = requested.intersection(visible);
+            if (requested_and_visible.empty())
+                continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
+
+            auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
+            for (const auto& drawable: drawables) {
+                if (drawable->getDrawArea().intersection(requested_and_visible.translate(-position)).empty())
+                    continue;
+
+                drawable->draw<Window>({}, clippedDc);
+            }
+
+            /*for (const auto& drawable : drawables) {
+                if (drawable->needsRedraw())
+                    drawable->redrawDone<Window>({});
+            }*/
+        }
+    }
+
+    //redrawNeeded=false;
+}
+
+void Window::needsRedrawForRect(const Rect& r) {
+    auto e = WindowManager::WMMessage(this, r.translate(position));
+    WindowManager::instance().pushMessage(std::move(e));
 }
 
 //
@@ -204,17 +162,189 @@ WindowManager& WindowManager::instance()
     return singleton;
 }
 
-bool WindowManager::start(shared_ptr<Window> window, bool modal)
+Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& prefs)
 {
-    if(window==0) return false;
-    PthreadLock lock(mutex);
-    if(windows.size()>=level2MaxNumApps) return false;
-    return true;
+    const std::shared_ptr<Window> w(new Window(p, std::move(prefs)));
+    w->visibleRects = { w->boundingBox };
+
+    {
+        std::scoped_lock lock(stack_mutex);
+        stack.push_back(w); // new windows are created on top of the stack
+
+        for (auto it = std::next(stack.rbegin()); it != stack.rend(); ++it) {
+            const auto& other = *it;
+            if (other->boundingBox.intersection(w->boundingBox).empty())
+                continue; // if other doesn't overlap with w, we don't need to touch it
+
+            // they somehow overlap! the intersection of their bounding boxes is now being covered by w
+            // we need to remove that intersection from the visible regions of the other window
+            std::list<Rect> updated_visible;
+            for (const auto& region : other->visibleRects) {
+                auto intersection = region.intersection(w->boundingBox);
+                if (intersection.empty()) {
+                    updated_visible.push_back(region);
+                    continue; // no intersection, check next visible region
+                }
+
+                auto newVisibleRegions = region - intersection;
+                for (const auto& newVisibleRegion : newVisibleRegions) {
+                    if (!newVisibleRegion.empty())
+                        updated_visible.push_back(newVisibleRegion);
+                }
+            }
+
+            other->visibleRects = std::move(updated_visible);
+        }
+    }
+    {
+        auto dc = DrawingContext(display);
+        w->clippedDraw(dc);
+    }
+
+    return Window::Handle { w };
 }
 
-WindowManager::WindowManager()
+void WindowManager::closeWindow(Window& w) {
+    if (w.onClose)
+        w.onClose();
+
+    std::scoped_lock lock(stack_mutex);
+
+    const auto victim = std::find_if(stack.begin(), stack.end(),
+        [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; });
+    if (victim == stack.end())
+        return;
+
+    // windows below w are [begin, victim)
+    for (auto it = stack.begin(); it != victim; ++it) {
+        const auto& other = *it;
+
+        if (other->boundingBox.intersection(w.boundingBox).empty())
+            continue;
+
+        auto dc = DrawingContext(display);
+
+        for (const auto& region : w.visibleRects) {
+            auto intersection = region.intersection(other->boundingBox);
+            if (intersection.empty())
+                continue;
+
+            other->visibleRects.push_back(intersection);
+            other->clippedDraw(dc, {intersection});
+        }
+    }
+
+    stack.erase(victim);
+}
+
+void WindowManager::recomputeVisibleRegions(const bool alsoDraw)
 {
-    pthread_mutex_init(&mutex,NULL);
+    std::list<Rect> alreadyVisible;
+    std::scoped_lock lock(stack_mutex);
+
+    // topmost -> backmost
+    for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
+        const auto& w = *it;
+
+        std::list<Rect> visible;
+        const Rect bounds = w->boundingBox;
+
+        // the visible region of a window is the entirety of its bounding box
+        // minus the parts that are covered by windows above it in the stack
+        visible.push_back(bounds);
+
+        // for each already visible region, remove it from the visible regions of this window
+        for (const auto& cover : alreadyVisible) {
+            if (visible.empty())
+                break;
+
+            if (bounds.intersection(cover).empty())
+                continue;
+
+            visible = Rect::subtractRect(visible, cover);
+        }
+
+        w->visibleRects = std::move(visible);
+        if (alsoDraw) {
+            auto dc = DrawingContext(display);
+            w->clippedDraw(dc);
+        }
+
+        alreadyVisible.insert(
+            alreadyVisible.end(),
+            w->visibleRects.begin(),
+            w->visibleRects.end()
+        );
+    }
+}
+
+void WindowManager::bringToFront(Window& w) {
+    std::list<Rect> uncoveredRegions;
+
+    {
+        std::scoped_lock lock(stack_mutex);
+
+        const auto it = std::find_if(stack.begin(), stack.end(), [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; });
+        if (it == stack.end())
+            return; // window not found, do nothing TODO: maybe we should throw an exception instead?
+
+        // The visible region of w is going to be the entirety of w, because we're bringing it to foreground.
+        const auto visibleRegion = w.boundingBox;
+
+        // for each window above w,
+        for (auto above = std::next(it); above != stack.end(); ++above) {
+            const auto& other = *above;
+
+            if (other->boundingBox.intersection(visibleRegion).empty())
+                continue; // if other doesn't overlap with w, we don't need to touch it
+
+            // they somehow overlap! the intersection of their bounding boxes is now being covered by w
+            // we need to remove that intersection from the visible regions of the other window
+            std::list<Rect> updated;
+            for (const auto& region: other->visibleRects) {
+                auto intersection = region.intersection(visibleRegion);
+                if (intersection.empty()) {
+                    updated.push_back(region);
+                    continue; // no intersection, check next visible region
+                }
+
+                // we have an intersection, we need to remove it from the visible regions of the other window
+                uncoveredRegions.push_back(intersection);
+
+                auto newVisibleRegions = region - intersection;
+                for (const auto& newVisibleRegion: newVisibleRegions) {
+                    if (!newVisibleRegion.empty())
+                        updated.push_back(newVisibleRegion);
+                }
+            }
+
+            other->visibleRects = std::move(updated);
+        }
+
+        stack.splice(stack.end(), stack, it);
+    }
+
+    w.visibleRects.clear();
+    w.visibleRects.push_back(w.boundingBox);
+
+    auto dc = DrawingContext(display);
+    w.clippedDraw(dc, uncoveredRegions);
+}
+
+WindowManager::WindowManager() : display( DisplayManager::instance().getDisplay() ) {
+    InputHandler::instance().registerEventCallback([this] {
+        auto e = InputHandler::instance().popEvent();
+        if (e.getEvent() == EventType::Default)
+            return;
+
+        pushMessage(WMMessage(std::move(e)));
+    });
+
+    WindowPreferences desktop;
+    desktop.width = display.get().getWidth() - 1;
+    desktop.height = display.get().getHeight() - 1;
+    desktop.background = rgb565(242,221,227);
+    createWindow({0, 0}, std::move(desktop));
 }
 
 } //namespace mxgui
