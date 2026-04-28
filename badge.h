@@ -6,8 +6,6 @@
 
 #pragma once
 
-#ifdef MXGUI_LEVEL_2
-
 #include <type_traits>
 
 // inspired by https://awesomekling.github.io/Serenity-C++-patterns-The-Badge/
@@ -59,5 +57,3 @@ public:
     BadgedRef(BadgedRef&&) = default;
     BadgedRef& operator=(BadgedRef&&) = delete;
 };
-
-#endif //MXGUI_LEVEL_2
