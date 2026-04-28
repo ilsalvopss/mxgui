@@ -269,6 +269,8 @@ public:
 
         void close() const;
 
+        void move(Point to) const;
+
         /**
          * Register a callback to be called when the window is about to be closed.
          *
@@ -367,6 +369,7 @@ public:
             Input,
             BringToFront,
             Close,
+            Move,
             WakeRepaint,
         };
 
@@ -376,7 +379,9 @@ public:
         Event event{};
 
         explicit WMMessage(Event&& e) : kind(Kind::Input), event(std::move(e)) {}
+
         WMMessage(Window* w, Rect r) : kind(Kind::WakeRepaint), window(w), rect(std::move(r)) {}
+        WMMessage(Window* w, Point to) : kind(Kind::Move), window(w), rect(Point(to.x(), to.y()), Point(to.x(), to.y())) {}
         WMMessage(Window* w, const Kind k) : kind(k), window(w) {}
     };
 
@@ -390,6 +395,8 @@ public:
     void closeWindow(Window& w);
 
     void bringToFront(Window& w);
+
+    void moveWindow(Window& w, Point to);
 
     /**
      * This recomputes the visible regions of all windows, and optionally redraws them.
@@ -455,6 +462,10 @@ public:
                         auto* w = msg->window;
                         bringToFront(*w); // create a non-owning shared_ptr
                         w->dirtyRects.clear(); // FIXME: what??
+                    } break;
+                    case WMMessage::Kind::Move: {
+                        auto* w = msg->window;
+                        moveWindow(*w, msg->rect.first); // the new position is stored in the first point of the rect
                     } break;
                     default: {
                         std::cout << "got unsupported event" << std::endl;

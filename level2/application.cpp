@@ -86,6 +86,12 @@ void Window::Handle::close() const {
     }
 }
 
+void Window::Handle::move(const Point to) const {
+    if (const auto locked = w.lock()) {
+        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), to));
+    }
+}
+
 Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
     boundingBox( p, {static_cast<short int>(p.x() + prefs.width), static_cast<short int>(p.y() + prefs.height)} )
 {
@@ -329,6 +335,25 @@ void WindowManager::bringToFront(Window& w) {
 
     auto dc = DrawingContext(display);
     w.clippedDraw(dc, uncoveredRegions);
+}
+
+void WindowManager::moveWindow(Window& w, const Point to) {
+    {
+        std::scoped_lock lock(stack_mutex);
+
+        const auto newBoundingBox = Rect {
+            to,
+            Point { static_cast<short int>(to.x() + w.prefs.width), static_cast<short int>(to.y() + w.prefs.height) }
+        };
+
+        w.position = to;
+        w.boundingBox = newBoundingBox;
+        //w.visibleRects = { newBoundingBox };
+    }
+
+    // It's heavy but for now it's at least correct.
+    // The move requires a full stack traversal anyway
+    recomputeVisibleRegions(true);
 }
 
 WindowManager::WindowManager() : display( DisplayManager::instance().getDisplay() ) {
