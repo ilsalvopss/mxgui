@@ -129,6 +129,84 @@ Font FullScreenDrawingContextProxy::getFont() const
     return dc.getFont();
 }
 
+//
+// class ClippedDrawingContextProxy
+//
+
+void ClippedDrawingContext::write(const Point p, const char *text) {
+    dc.clippedWrite(origin + p, clippingRect.first, clippingRect.second, text);
+}
+
+void ClippedDrawingContext::clippedWrite(const Point p, const Point a, const Point b, const char* text) {
+    const auto clipped_a = clippingRect.intersection({origin + a, origin + b});
+    if (clipped_a.empty())
+        return; // requested clipping area is completely outside clippingRect, don't write anything
+
+    dc.clippedWrite(origin + p, clipped_a.first, clipped_a.second, text);
+}
+
+void ClippedDrawingContext::clear(const Color color) {
+    dc.clear(clippingRect.first, clippingRect.second, color);
+}
+
+void ClippedDrawingContext::clear(const Point p1, const Point p2, const Color color) {
+    const auto intersection = clippingRect.intersection({origin + p1, origin + p2});
+    if (intersection.empty())
+        return; // area to clear is completely outside clippingRect, don't clear anything
+
+    dc.clear(intersection.first, intersection.second, color);
+}
+
+void ClippedDrawingContext::line(const Point a, const Point b, const Color color) {
+    dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
+}
+
+void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const unsigned short length) {
+    const auto absolute_p = origin + p;
+    if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() >= clippingRect.second.y())
+        return; // line is completely outside clippingRect (vertically), don't draw anything
+
+    auto x0 = absolute_p.x();
+    auto x1 = absolute_p.x() + length;
+
+    if (x1 <= clippingRect.first.x() || x0 >= clippingRect.second.x())
+        return; // line is completely outside clippingRect (horizontally), don't draw anything
+
+    if (x0 < clippingRect.first.x()) {
+        // line starts before clippingRect, skip the first pixels
+        const auto skip = clippingRect.first.x() - x0;
+        colors += skip;
+
+        // update x0 to the first pixel inside clippingRect
+        x0 = clippingRect.first.x();
+    }
+
+    if (x1 > clippingRect.second.x()) // line ends after clippingRect
+        x1 = clippingRect.second.x(); // update x1 to the last pixel inside clippingRect
+
+    dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0);
+}
+
+void ClippedDrawingContext::drawImage(const Point p, const ImageBase& img) {
+    dc.clippedDrawImage(origin + p, clippingRect.first, clippingRect.second, img);
+}
+
+void ClippedDrawingContext::clippedDrawImage(const Point p, const Point a, const Point b, const ImageBase& img) {
+    const auto intersection = clippingRect.intersection({origin + a, origin + b});
+    if (intersection.empty())
+        return; // image is completely outside clippingRect, don't draw anything
+
+    dc.clippedDrawImage(origin + p, intersection.first, intersection.second, img);
+}
+
+void ClippedDrawingContext::drawRectangle(const Point a, const Point b, const Color c) {
+    const auto intersection = clippingRect.intersection({origin + a, origin + b});
+    if (intersection.empty())
+        return; // rectangle is completely outside clippingRect, don't draw anything
+
+    dc.drawRectangle(intersection.first, intersection.second, c);
+}
+
 } //namespace miosix
 
 #endif //MXGUI_LEVEL_2

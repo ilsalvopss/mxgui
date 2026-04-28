@@ -26,7 +26,8 @@
  ***************************************************************************/
 
 #include "application.h"
-#include "pthread_lock.h"
+#include <iostream>
+#include <optional>
 #include "misc_inst.h"
 
 #ifdef MXGUI_LEVEL_2
@@ -34,133 +35,6 @@
 using namespace std;
 
 namespace mxgui {
-
-//
-// class DrawableOwner
-//
-
-void DrawableOwner::remove(const Drawable& d){
-    const auto rectBeingRemoved = d.getDrawArea();
-
-    // this is probably a bit slow.. but Drawable removal? seems pretty rare!
-    {
-        std::scoped_lock lock(drawables_mutex);
-        drawables.remove_if([&d](const std::unique_ptr<Drawable>& ptr) { return ptr.get() == &d; });
-    }
-
-    needsRedrawForRect(rectBeingRemoved);
-}
-
-//
-// class Drawable
-//
-
-Drawable::Drawable(BadgedRef<DrawableOwner> owner, Rect da) : owner(owner), da(std::move(da)), needRedraw(false) {}
-
-Drawable::Drawable(BadgedRef<DrawableOwner> owner, Point p, const short width, const short height)
-    : owner(owner), da(make_pair(p,Point(p.x()+width,p.y()+height))), needRedraw(false) {}
-
-void Drawable::enqueueForRedraw()
-{
-    needRedraw=true;
-    owner.needsPartialRedraw<Drawable>({}, *this);
-}
-
-void Drawable::onEvent(Badge<Window>, Event e) {
-    // unhandled event
-}
-
-//
-// class Window
-//
-
-void Window::Handle::bringToFront() const {
-    if (const auto locked = w.lock()) {
-        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), WindowManager::WMMessage::Kind::BringToFront));
-    }
-}
-
-void Window::Handle::close() const {
-    if (const auto locked = w.lock()) {
-        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), WindowManager::WMMessage::Kind::Close));
-    }
-}
-
-void Window::Handle::move(const Point to) const {
-    if (const auto locked = w.lock()) {
-        WindowManager::instance().pushMessage(WindowManager::WMMessage(locked.get(), to));
-    }
-}
-
-Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
-    boundingBox( p, {static_cast<short int>(p.x() + prefs.width), static_cast<short int>(p.y() + prefs.height)} )
-{
-    makeDrawable<SolidBackground>(
-        Rect { Point{0, 0}, Point{ prefs.width, prefs.height } },
-        prefs.background
-        );
-}
-
-void Window::clippedRedraw(DrawingContext& dc, const std::list<Rect>& requestedRects) {
-    for (const auto& requested: requestedRects) {
-        for (const auto& visible : visibleRects) {
-            auto requested_and_visible = requested.intersection(visible);
-            if (requested_and_visible.empty())
-                continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
-
-            const auto localRegion = requested_and_visible.translate(-position);
-            auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
-            for (auto& drawable: drawables) {
-                if (!drawable->needsRedraw())
-                    continue;
-
-                if (drawable->getDrawArea().intersection(localRegion).empty())
-                    continue;
-
-                drawable->draw<Window>({}, clippedDc);
-            }
-        }
-    }
-
-    for (const auto& drawable: drawables) {
-        if (drawable->needsRedraw())
-            drawable->redrawDone<Window>({});
-    }
-}
-
-void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRects) {
-    for (const auto& requested: requestedRects) {
-        for (const auto& visible : visibleRects) {
-            auto requested_and_visible = requested.intersection(visible);
-            if (requested_and_visible.empty())
-                continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
-
-            auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
-            for (const auto& drawable: drawables) {
-                if (drawable->getDrawArea().intersection(requested_and_visible.translate(-position)).empty())
-                    continue;
-
-                drawable->draw<Window>({}, clippedDc);
-            }
-
-            /*for (const auto& drawable : drawables) {
-                if (drawable->needsRedraw())
-                    drawable->redrawDone<Window>({});
-            }*/
-        }
-    }
-
-    //redrawNeeded=false;
-}
-
-void Window::needsRedrawForRect(const Rect& r) {
-    auto e = WindowManager::WMMessage(this, r.translate(position));
-    WindowManager::instance().pushMessage(std::move(e));
-}
-
-//
-// class WindowManager
-//
 
 WindowManager& WindowManager::instance()
 {
@@ -353,6 +227,114 @@ void WindowManager::moveWindow(Window& w, const Point to) {
 
     // It's heavy but for now it's at least correct.
     // The move requires a full stack traversal anyway
+    recomputeVisibleRegions(true);
+}
+
+void WindowManager::pushMessage(WMMessage&& m)  {
+    {
+        std::lock_guard lock(message_mutex);
+
+        if (m.window && m.window->closing)
+            return;
+
+        messages.push_back(std::move(m));
+    }
+
+    cond.notify_one();
+}
+
+void WindowManager::loop() {
+    bool redrawNeeded = false;
+
+    for (;;) {
+        std::optional<WMMessage> msg;
+        {
+            std::unique_lock lock(message_mutex);
+            cond.wait(lock, [&] {
+                return !messages.empty() || redrawNeeded;
+            });
+
+            if (!messages.empty()) {
+                msg = std::move(messages.front());
+                messages.pop_front();
+            }
+        }
+
+        if (msg) {
+            switch (msg->kind) {
+                case WMMessage::Kind::Close: {
+                    auto* w = msg->window;
+                    closeWindow(*w);
+                    // so now no more messages related to this window should arrive as the window
+                    // and its drawables are all destroyed
+
+                    // except the ones that are already in the queue. let's drain them
+                    {
+                        std::unique_lock lock(message_mutex);
+                        w->closing = true; // mark the window as closing, so that new messages are not accepted
+
+                        messages.remove_if([w](const WMMessage& m) {
+                            return m.window == w;
+                        });
+                    }
+                }
+                break;
+                case WMMessage::Kind::WakeRepaint: {
+                    auto* w = msg->window;
+                    w->dirtyRects.push_back(msg->rect);
+                    redrawNeeded = true;
+                    continue;
+                }
+                break;
+                case WMMessage::Kind::BringToFront: {
+                    auto* w = msg->window;
+                    bringToFront(*w); // create a non-owning shared_ptr
+                    w->dirtyRects.clear(); // FIXME: what??
+                }
+                break;
+                case WMMessage::Kind::Move: {
+                    auto* w = msg->window;
+                    moveWindow(*w, msg->rect.first); // the new position is stored in the first point of the rect
+                }
+                break;
+                default: {
+                    std::cout << "got unsupported event" << std::endl;
+                }
+                break;
+            }
+        }
+
+        if (!redrawNeeded)
+            continue;
+
+        {
+            auto dc = DrawingContext(display);
+
+            std::scoped_lock stack_lock(stack_mutex);
+            for (const auto& w: stack) {
+                if (w->dirtyRects.empty())
+                    continue;
+
+                w->clippedRedraw(dc, w->dirtyRects);
+                w->dirtyRects.clear();
+            }
+        }
+
+        redrawNeeded = false;
+    }
+}
+
+void WindowManager::setDisplay(Display& d) {
+    std::scoped_lock lock2(message_mutex);
+
+    {
+        std::scoped_lock lock(stack_mutex); // let's wait for any operations on the stack & drawing to finish
+
+        display = d;
+    }
+
+    // TODO: resize all windows?
+
     recomputeVisibleRegions(true);
 }
 

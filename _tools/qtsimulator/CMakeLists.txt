@@ -63,6 +63,8 @@ set(LIB_SRCS
     ../../level2/widgets/simple_plot.cpp
     ../../level2/input.cpp
     ../../level2/application.cpp
+    ../../level2/drawable.cpp
+    ../../level2/window.cpp
     ../../level2/drawing_context_proxy.cpp
     from_miosix/unicode.cpp
     qtbackend.cpp

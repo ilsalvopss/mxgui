@@ -350,9 +350,7 @@ public:
      * \param p point where the upper left corner of the text will be printed.
      * \param text, text to print.
      */
-    void write(const Point p, const char *text) override {
-        dc.clippedWrite(origin + p, clippingRect.first, clippingRect.second, text);
-    }
+    void write(Point p, const char *text) override;
 
     /**
      * Write part of text to the display in our clipping region
@@ -361,21 +359,13 @@ public:
      * \param b Lower right corner of clipping rectangle
      * \param text text to write
      */
-    void clippedWrite(const Point p, const Point a, const Point b, const char *text) override {
-        const auto clipped_a = clippingRect.intersection({origin + a, origin + b});
-        if (clipped_a.empty())
-            return; // requested clipping area is completely outside clippingRect, don't write anything
-
-        dc.clippedWrite(origin + p, clipped_a.first, clipped_a.second, text);
-    }
+    void clippedWrite(Point p, Point a, Point b, const char *text) override;
 
     /**
      * Clear the clippingRect and fill it with the desired color
      * \param color fill color
      */
-    void clear(const Color color) override {
-        dc.clear(clippingRect.first, clippingRect.second, color);
-    }
+    void clear(Color color) override;
 
     /**
      * Clear an area of the clippingRect
@@ -383,13 +373,7 @@ public:
      * \param p2 lower right corner of area to clear
      * \param color fill color
      */
-    void clear(const Point p1, const Point p2, const Color color) override {
-        const auto intersection = clippingRect.intersection({origin + p1, origin + p2});
-        if (intersection.empty())
-            return; // area to clear is completely outside clippingRect, don't clear anything
-
-        dc.clear(intersection.first, intersection.second, color);
-    }
+    void clear(Point p1, Point p2, Color color) override;
 
     /**
      * Draw a line between point a and point b, with color c
@@ -397,9 +381,7 @@ public:
      * \param b second point
      * \param color line color
      */
-    void line(const Point a, const Point b, const Color color) override {
-        dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
-    }
+    void line(Point a, Point b, Color color) override;
 
     /**
      * Draw an horizontal line on the clippingRect.
@@ -410,31 +392,7 @@ public:
      * \param length length of colors array.
      * p.x()+length must be <= clippingRect's width
      */
-    void scanLine(const Point p, const Color *colors, const unsigned short length) override {
-        const auto absolute_p = origin + p;
-        if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() >= clippingRect.second.y())
-            return; // line is completely outside clippingRect (vertically), don't draw anything
-
-        auto x0 = absolute_p.x();
-        auto x1 = absolute_p.x() + length;
-
-        if (x1 <= clippingRect.first.x() || x0 >= clippingRect.second.x())
-            return; // line is completely outside clippingRect (horizontally), don't draw anything
-
-        if (x0 < clippingRect.first.x()) {
-            // line starts before clippingRect, skip the first pixels
-            const auto skip = clippingRect.first.x() - x0;
-            colors += skip;
-
-            // update x0 to the first pixel inside clippingRect
-            x0 = clippingRect.first.x();
-        }
-
-        if (x1 > clippingRect.second.x()) // line ends after clippingRect
-            x1 = clippingRect.second.x(); // update x1 to the last pixel inside clippingRect
-
-        dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0);
-    }
+    void scanLine(Point p, const Color *colors, unsigned short length) override;
 
     /**
      * \return a buffer of length equal to this->getWidth() that can be used to
@@ -462,9 +420,7 @@ public:
      * \param p point of the upper left corner where the image will be drawn
      * \param img image to draw
      */
-    void drawImage(const Point p, const ImageBase& img) override {
-        dc.clippedDrawImage(origin + p, clippingRect.first, clippingRect.second, img);
-    }
+    void drawImage(Point p, const ImageBase& img) override;
 
     /**
      * Draw part of an image on the screen
@@ -475,13 +431,7 @@ public:
      * \param b Lower right corner of clipping rectangle
      * \param img Image to draw
      */
-    void clippedDrawImage(const Point p, const Point a, const Point b, const ImageBase& img) override {
-        const auto intersection = clippingRect.intersection({origin + a, origin + b});
-        if (intersection.empty())
-            return; // image is completely outside clippingRect, don't draw anything
-
-        dc.clippedDrawImage(origin + p, intersection.first, intersection.second, img);
-    }
+    void clippedDrawImage(Point p, Point a, Point b, const ImageBase& img) override;
 
     /**
      * Draw a rectangle (not filled) with the desired color
@@ -489,13 +439,7 @@ public:
      * \param b lower right corner of the rectangle
      * \param c color of the line
      */
-    void drawRectangle(const Point a, const Point b, const Color c) override {
-        const auto intersection = clippingRect.intersection({origin + a, origin + b});
-        if (intersection.empty())
-            return; // rectangle is completely outside clippingRect, don't draw anything
-
-        dc.drawRectangle(intersection.first, intersection.second, c);
-    }
+    void drawRectangle(const Point a, const Point b, const Color c) override;
 
     /**
      * \return the clippingRect's height
