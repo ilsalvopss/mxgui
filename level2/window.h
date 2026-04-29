@@ -17,10 +17,11 @@ namespace mxgui {
      * \ingroup pub_iface_2
      * This class contains all the configuration options for a window
      */
-    struct WindowPreferences
-    {
+    struct WindowPreferences {
         /**
          * Constructor
+         * \param width width of the window
+         * \param height height of the window
          * \param foreground foreground color
          * \param background background color
          * \param font default font
@@ -30,8 +31,8 @@ namespace mxgui {
                                    : width(width), height(height), foreground(foreground), background(background),
                                      font(font) {}
 
-        short width;
-        short height;
+        short width;      ///< Width of the window, in pixels
+        short height;     ///< Height of the window, in pixels
         Color foreground; ///< Foreground color
         Color background; ///< Background color
         Font font;        ///< Default font
@@ -41,6 +42,10 @@ namespace mxgui {
         friend class WindowManager;
         using CloseFn = void(*)();
 
+        /**
+         * \internal
+         * Simple Drawable object that paints the background of a Window.
+         */
         class SolidBackground final : public Drawable {
         public:
             SolidBackground(BadgedRef<DrawableOwner>&& owner, const Rect& da, const Color color)
@@ -55,46 +60,82 @@ namespace mxgui {
 
         /**
          * Constructor
+         * \param p      initial position of the new Window (top-left)
+         * \param prefs  a WindowPreferences object
          */
         Window(Point p, WindowPreferences&& prefs);
 
+        /**
+         * Draws anything belonging to this window that needs a redraw inside the area of this window.
+         * Also, only draws areas requested via requestedRects.
+         *
+         * @param dc a reference to the DrawingContext through which the window should be drawn
+         * @param requestedRects a list of Rects to limit the scope of this drawing
+         */
         void clippedRedraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const;
 
+        /**
+         * Draws anything belonging to this window that needs a redraw inside the area of this window.
+         *
+         * @param dc a reference to the DrawingContext through which the window should be drawn
+         */
         void clippedRedraw(DrawingContext& dc) const { clippedRedraw(dc, visibleRects); }
 
-        // This is different from clippedRedraw because it redraws all drawables, even not invalidated ones
-        // This is used for example when the window is brought to foreground, but part of it was already visible,
-        // so we redraw drawables in the regions hinted by the WindowManager.
+        /**
+         * Draws anything belonging to this window regardless of its invalidation state.
+         * Also, only draws areas requested via requestedRects.
+         *
+         * @param dc a reference to the DrawingContext through which the window should be drawn
+         * @param requestedRects a list of Rects to limit the scope of this drawing
+         */
         void clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const;
 
-        // This draws all visibleRegions of this window, and is used for example when the window is brought to foreground
-        // Also, if widgets "move", they need to be redrawn even if they were not invalidated, because their position changed
+        /**
+         * Draws anything belonging to this window regardless of its invalidation state.
+         *
+         * @param dc a reference to the DrawingContext through which the window should be drawn
+         */
         void clippedDraw(DrawingContext& dc) const { clippedDraw(dc, visibleRects); }
 
         /**
          * \internal
          * Called by the window manager to send user events to this window.
-         * Do not call from user code
          * \param e event to post
          */
         void postEvent(Event e);
 
+        /**
+         * \internal
+         * Registers the closing callback for this window.
+         * @param f a callback with signature compatible with CloseFn
+         */
         void registerOnClose(const CloseFn f) { onClose = f; }
     public:
 
         /**
+         * \ingroup pub_iface_2
          * A handle to a window. This is what external code must use to interact with a window.
          */
         class Handle {
         public:
+            /**
+             * Requests the WindowManager to bring the associated window to the foreground.
+             */
             void bringToFront() const;
 
+            /**
+             * Requests the WindowManager to close the associated window.
+             */
             void close() const;
 
+            /**
+             * Requests the WindowManager to move the associated window to a new position.
+             * @param to new position for this window
+             */
             void move(Point to) const;
 
             /**
-             * Register a callback to be called when the window is about to be closed.
+             * Registers a callback to be called when the window is about to be closed.
              *
              * Note that a single callback can be registered for each window.
              * @param f the callback to call when the window is about to be closed
@@ -106,7 +147,7 @@ namespace mxgui {
             }
 
             /**
-             * This is a convenience helper to run code that mutates something within the window, for example a drawable
+             * This is a convenience helper to run code that mutates something within the window, for example a drawable,
              * while having a guarantee that the window is still alive.
              *
              * Note that if the code run inside here outlives the window, it will have no effect as the WindowManager
@@ -171,7 +212,7 @@ namespace mxgui {
         Rect boundingBox;                        ///< Cached bounding box of the window
 
         std::list<Rect> visibleRects;            ///< List of visible regions on the window, used to optimize redraws
-        std::list<Rect> dirtyRects;              ///
+        std::list<Rect> dirtyRects;              ///< List of invalidated regions on the window, used to optimize redraws
 
         WindowPreferences prefs;                 ///< Window preferences
 

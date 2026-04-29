@@ -505,6 +505,14 @@ public:
         display.line(a,b,color);
     }
 
+    /**
+     * Draw a line between point a and point b, with color c, clipped to the rectangle defined by points c and d
+     * @param a first point
+     * @param b second point
+     * @param clipA top-left of clipping area
+     * @param clipB bottom-right of clipping area
+     * @param color line color
+     */
     void clippedLine(Point a, Point b, Point clipA, Point clipB, Color color)
     {
         display.clippedLine(a,b,clipA,clipB,color);

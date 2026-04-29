@@ -51,7 +51,7 @@ public:
 
     /**
      * Draw a line between point a and point b, clipped to the rectangle
-     * defined by topLeft and bottomRight. TODO: check for inclusivity
+     * defined by topLeft and bottomRight.
      * \param surface an object providing beginPixel() and setPixel()
      * \param a first point
      * \param b second point
