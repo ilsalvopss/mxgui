@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2014 by Terraneo Federico                               *
+ *                 2026 by Salvatore Passaro                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -28,7 +29,6 @@
 #pragma once
 
 #include <utility>
-#include <vector>
 #include <list>
 #include "point.h"
 
@@ -36,7 +36,7 @@ namespace mxgui {
 
 /**
  * \ingroup pub_iface_2
- * This class represents a simple rectangle on screen
+ * This class represents a rectangular region
  * Inheritance from std::pair<Point,Point> is maintained for backward compatibility
  * \param first upper left point
  * \param second lower right point
@@ -50,23 +50,45 @@ public:
     Rect(Point first, Point second) : std::pair<Point,Point>(first,second) {}
     explicit Rect(const std::pair<Point,Point>& p) : std::pair<Point,Point>(p) {}
 
+    /**
+     * Test if this is an empty area
+     *
+     * @return true if this area is empty
+     */
     [[nodiscard]] bool empty() const {
         return first.x() >= second.x() || first.y() >= second.y();
     }
 
+    /**
+     * Test if point p is contained in this
+     *
+     * @param p point to check for containment
+     * @return true if p is contained in this
+     */
     [[nodiscard]] bool contains(const Point& p) const
     {
         return p.within(first,second);
     }
 
+    /**
+     * Test if other is contained in this
+     *
+     * @param other the area to check if it's contained in this
+     * @return true if other in contained by this
+     */
     [[nodiscard]] bool contains(const Rect& other) const
     {
         // An area contains another if the upper left point of the other area is within this area
         // and the lower right point of the other area is within this area
-        // TODO: check if this is consistent with "strictness"
         return other.first.within(first,second) && other.second.within(first,second);
     }
 
+    /**
+     * Intersect this with other
+     *
+     * @param other region with which to intersect this
+     * @return intersection
+     */
     [[nodiscard]] Rect intersection(const Rect& other) const
     {
         Point newFirst(std::max(first.x(),other.first.x()),std::max(first.y(),other.first.y()));
@@ -78,25 +100,34 @@ public:
         return { newFirst, newSecond };
     }
 
+    /**
+     * Translate this by the offsets in p.
+     *
+     * @param p translation offset
+     * @return translated Rect
+     */
     [[nodiscard]] Rect translate(const Point& p) const
     {
         return { first + p, second + p };
     }
 
-    // let's do a difference s.t. we return one (or more!) new Rects.
-    // more is because the difference of two rectangles can be a non-rectangular shape,
-    // which we can represent as the union of multiple rectangles.
-    // TODO: (optimization) we're guaranteed to have at most 4 rects,
-    //       we probably should use a fixed-size array instead of a vector, to avoid dynamic memory allocation.
-    [[nodiscard]] std::vector<Rect> operator- (const Rect& other) const
-    {
-        std::vector<Rect> result;
+    /**
+     * difference operator
+     * the difference between two rectangles can be a non-rectangular shape
+     * but can be represented by the union of multiple rects.
+     *
+     * Note: (optimization) we're guaranteed to have at most 4 rects,
+     * so let's avoid a heap alloc and always return a fixed array :)
+     * @param other rhs
+     * @return array containing at most 4 non-empty rects
+     */
+    [[nodiscard]] std::array<Rect, 4> operator- (const Rect& other) const {
+        std::array<Rect, 4> result;
 
         const auto intersection = this->intersection(other);
         // If the areas don't intersect, the difference is just this area
-        if(intersection.empty())
-        {
-            result.push_back(*this);
+        if(intersection.empty()) {
+            result[0] = *this;
             return result;
         }
 
@@ -105,29 +136,36 @@ public:
 
         // Top area
         if(first.y() < intersection.first.y())
-            result.emplace_back(Point(first.x(), first.y()), Point(second.x(), intersection.first.y()-1));
+            result[0] = { Point(first.x(), first.y()), Point(second.x(), intersection.first.y()-1) };
 
         // Bottom area
         if(second.y() > intersection.second.y())
-            result.emplace_back(Point(first.x(), intersection.second.y()), Point(second.x(), second.y()-1));
+            result[1] = { Point(first.x(), intersection.second.y()+1), Point(second.x(), second.y()) };
 
         // Left area
         if(first.x() < intersection.first.x())
-            result.emplace_back(
-                Point(first.x(), intersection.first.y()),
-                Point(intersection.first.x()-1, intersection.second.y())
-                );
+            result[2] = {
+            Point(first.x(), intersection.first.y()),
+            Point(intersection.first.x()-1, intersection.second.y())
+            };
 
         // Right area
         if(second.x() > intersection.second.x())
-            result.emplace_back(
-                Point(intersection.second.x()+1, intersection.first.y()),
-                Point(second.x(), intersection.second.y())
-                );
+            result[3] = {
+            Point(intersection.second.x()+1, intersection.first.y()),
+            Point(second.x(), intersection.second.y())
+            };
 
         return result;
     }
 
+    /**
+     * Helper that subtracts a cover area from a list of regions.
+     *
+     * @param regions regions from which to subtract cover
+     * @param cover region to subtract
+     * @return resulting list of regions
+     */
     static std::list<Rect> subtractRect(const std::list<Rect>& regions, const Rect& cover)
     {
         std::list<Rect> result;
