@@ -74,6 +74,14 @@ class Event
 {
 public:
     /**
+     *
+     * @param e event object to translate
+     * @param p translation offset
+     * @return a new event with the point translated by p
+     */
+    static Event translate(Event e, Point p);
+
+    /**
      * Default constructor
      */
     Event(): e(EventType::Default), k(0), d(false), p(-1,-1) {}

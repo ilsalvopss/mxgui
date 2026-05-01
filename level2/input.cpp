@@ -55,6 +55,11 @@ InputHandler& InputHandler::instance()
     return singleton;
 }
 
+Event Event::translate(Event e, const Point p) {
+    e.p = e.p + p;
+    return e;
+}
+
 Event InputHandler::getEvent()
 {
     return pImpl->getEvent();
