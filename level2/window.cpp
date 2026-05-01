@@ -34,10 +34,10 @@ void Window::Handle::move(const Point to) const {
 }
 
 Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
-    boundingBox( p, {static_cast<short int>(p.x() + prefs.width), static_cast<short int>(p.y() + prefs.height)} )
+    boundingBox( p, {static_cast<short int>(p.x() + prefs.width - 1), static_cast<short int>(p.y() + prefs.height - 1)} )
 {
     makeDrawable<SolidBackground>(
-        Rect { Point{0, 0}, Point{ prefs.width, prefs.height } },
+        Rect { Point{0, 0}, Point{ static_cast<short int>(prefs.width - 1), static_cast<short int>(prefs.height - 1) } },
         prefs.background
         );
 }

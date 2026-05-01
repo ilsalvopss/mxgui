@@ -445,14 +445,14 @@ public:
      * \return the clippingRect's height
      */
     [[nodiscard]] short int getHeight() const override {
-        return clippingRect.second.y() - clippingRect.first.y();
+        return clippingRect.second.y() - clippingRect.first.y() + 1;
     }
 
     /**
      * \return the clippingRect's width
      */
     [[nodiscard]] short int getWidth() const override {
-        return clippingRect.second.x() - clippingRect.first.x();
+        return clippingRect.second.x() - clippingRect.first.x() + 1;
     }
 
     /**

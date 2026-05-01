@@ -101,7 +101,7 @@ public:
     * \return true if this is within the area identified by b and c
     */
     [[nodiscard]] bool within(const Point& b, const Point& c) const {
-        return x_ >= b.x_ && y_ >= b.y_ && x_ < c.x_ && y_ < c.y_;
+        return x_ >= b.x_ && y_ >= b.y_ && x_ <= c.x_ && y_ <= c.y_;
     }
 
     // debug print for std::cout <<
@@ -122,7 +122,7 @@ private:
  */
 inline bool within(const Point& a, const Point& b, const Point& c)
 {
-    return a.x()>=b.x() && a.y()>=b.y() && a.x()<c.x() && a.y()<c.y();
+    return a.x()>=b.x() && a.y()>=b.y() && a.x()<=c.x() && a.y()<=c.y();
 }
 
 } // namespace mxgui

@@ -72,7 +72,7 @@ public:
         Point newFirst(std::max(first.x(),other.first.x()),std::max(first.y(),other.first.y()));
         Point newSecond(std::min(second.x(),other.second.x()),std::min(second.y(),other.second.y()));
 
-        if(newFirst.x() >= newSecond.x() || newFirst.y() >= newSecond.y())
+        if(newFirst.x() > newSecond.x() || newFirst.y() > newSecond.y())
             return {}; //Empty area
 
         return { newFirst, newSecond };
@@ -105,23 +105,23 @@ public:
 
         // Top area
         if(first.y() < intersection.first.y())
-            result.emplace_back(Point(first.x(), first.y()), Point(second.x(), intersection.first.y()));
+            result.emplace_back(Point(first.x(), first.y()), Point(second.x(), intersection.first.y()-1));
 
         // Bottom area
         if(second.y() > intersection.second.y())
-            result.emplace_back(Point(first.x(), intersection.second.y()), Point(second.x(), second.y()));
+            result.emplace_back(Point(first.x(), intersection.second.y()), Point(second.x(), second.y()-1));
 
         // Left area
         if(first.x() < intersection.first.x())
             result.emplace_back(
                 Point(first.x(), intersection.first.y()),
-                Point(intersection.first.x(), intersection.second.y())
+                Point(intersection.first.x()-1, intersection.second.y())
                 );
 
         // Right area
         if(second.x() > intersection.second.x())
             result.emplace_back(
-                Point(intersection.second.x(), intersection.first.y()),
+                Point(intersection.second.x()+1, intersection.first.y()),
                 Point(second.x(), intersection.second.y())
                 );
 
@@ -135,8 +135,7 @@ public:
         for (const auto& region : regions) {
             const auto intersection = region.intersection(cover);
 
-            const auto pieces = region - intersection;
-            for (const auto& piece : pieces) {
+            for (const auto pieces = region - intersection; const auto& piece : pieces) {
                 if (!piece.empty())
                     result.push_back(piece);
             }

@@ -30,19 +30,13 @@ namespace mxgui {
     // class Drawable
     //
 
-    Drawable::Drawable(BadgedRef<DrawableOwner> owner, Rect da) : owner(owner), da(std::move(da)), needRedraw(false) {}
+    Drawable::Drawable(BadgedRef<DrawableOwner> owner, Rect da) : owner(owner), da(std::move(da)) {}
 
     Drawable::Drawable(BadgedRef<DrawableOwner> owner, Point p, const short width, const short height)
-        : owner(owner), da(std::make_pair(p,Point(p.x()+width,p.y()+height))), needRedraw(false) {}
+        : owner(owner), da(std::make_pair(p,Point(p.x()+width-1,p.y()+height-1))) {}
 
-    void Drawable::enqueueForRedraw()
-    {
-        needRedraw=true;
+    void Drawable::enqueueForRedraw() const {
         owner.needsPartialRedraw<Drawable>({}, *this);
-    }
-
-    void Drawable::onEvent(Badge<Window>, Event e) {
-        // unhandled event
     }
 }
 
