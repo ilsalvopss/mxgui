@@ -14,56 +14,7 @@
 
 namespace mxgui {
     class Window;
-    class Drawable;
-
-    /**
-     * A DrawableOwner is any object that can contain drawables, such as a Window or a Widget.
-     * It provides the makeDrawable() function to create drawables and register them to the owner,
-     * and the remove() function to remove them.
-     *
-     * It is the DrawableOwner's responsibility to manage the lifetime of the drawables it owns,
-     * and to call their onDraw() function when needed.
-     *
-     * TODO: when implementing events, it is also the DrawableOwner's responsibility to forward events to the drawables it owns
-     */
-    class DrawableOwner {
-        virtual void needsRedrawForRect(const Rect& r) = 0;
-
-    protected:
-        std::mutex drawables_mutex;
-        std::list<std::unique_ptr<Drawable>> drawables;
-
-    public:
-        template<class T, class... Args>
-        requires std::is_base_of_v<Drawable, T>
-        T& makeDrawable(Args&&... args) {
-            auto raw_drawable = new T(BadgedRef(*this), std::forward<Args>(args)...);
-            {
-                auto owned = std::unique_ptr<T>(raw_drawable);
-                std::lock_guard lock(drawables_mutex);
-                drawables.push_back(std::move(owned));
-            }
-            return *raw_drawable;
-        }
-
-        virtual Window& getWindow() = 0;
-
-        void remove(const Drawable& d);
-
-        /**
-         * \internal
-         * Called by a drawable to signal that it needs to be redrawn.
-         * Do not call from user code
-         * \param d drawable that needs to be redrawn
-         */
-        template<class T>
-        requires std::is_base_of_v<Drawable, T>
-        void needsPartialRedraw(Badge<T>, const T& d) {
-            needsRedrawForRect(d.getDrawArea());
-        }
-
-        virtual ~DrawableOwner() = default;
-    };
+    class DrawableOwner;
 
     /**
      * \ingroup pub_iface_2
@@ -71,6 +22,11 @@ namespace mxgui {
      */
     class Drawable
     {
+        // makeDrawable hands out a reference to Drawables for immediate use.
+        // let's disallow copying
+        Drawable(const Drawable&) = delete;
+        Drawable& operator=(const Drawable&) = delete;
+
     public:
         /**
          * \return the draw area of the object
@@ -81,27 +37,9 @@ namespace mxgui {
         requires std::is_base_of_v<DrawableOwner, T>
         void draw(Badge<T>, DrawingContextProxy& dc) { onDraw(dc); }
 
-        /**
-         * \internal
-         * Called after onDraw() by the parent window when the Drawable is being
-         * redrawn, do not call this directly.
-         */
         template<class T>
         requires std::is_base_of_v<DrawableOwner, T>
-        void redrawDone(Badge<T>) { onRedrawDone(); needRedraw=false; }
-
-        /**
-         * \internal
-         * Override this member function to handle user input events. Called by the
-         * parent Window, do not call this directly.
-         * \param e event
-         */
-        virtual void onEvent(Badge<Window>, Event e);
-
-        /**
-         * \return true if this Drawable needs to be redrawn
-         */
-        [[nodiscard]] bool needsRedraw() const { return needRedraw; }
+        void event(Badge<T>, Event& e) { onEvent(e); }
 
         /**
          * Destructor
@@ -136,19 +74,89 @@ namespace mxgui {
 
         /**
          * \internal
-         * Override this member function to do custom work after you've been redrawn.
-         * For example, a Drawable that is also a DrawableOwner and has child drawables may want to propagate this.
+         * Override this member function to handle user input events. Called by the
+         * parent Window, do not call this directly.
+         * \param e event
          */
-        virtual void onRedrawDone() {}
+        virtual void onEvent(Event e) {}
 
         /**
          * Signal that this object needs to be redrawn
          */
-        void enqueueForRedraw();
+        void enqueueForRedraw() const;
 
         DrawableOwner &owner;
         Rect da;         ///< Area on screen occupied by this object
-        bool needRedraw; ///< True if this object needs to be redrawn
+    };
+
+    /**
+     * A DrawableOwner is any object that can contain drawables, such as a Window or a Widget.
+     * It provides the makeDrawable() function to create drawables and register them to the owner,
+     * and the remove() function to remove them.
+     *
+     * It is the DrawableOwner's responsibility to manage the lifetime of the drawables it owns,
+     * and to call their onDraw() function when needed.
+     *
+     * TODO: when implementing events, it is also the DrawableOwner's responsibility to forward events to the drawables it owns
+     */
+    class DrawableOwner {
+        virtual void needsRedrawForRect(const Rect& r) = 0;
+
+    protected:
+        mutable std::recursive_mutex drawables_mutex;
+        std::list<std::unique_ptr<Drawable>> drawables;
+
+        void hitTestAndDispatch(Event& e);
+
+    public:
+        template<class T, class... Args>
+        requires std::is_base_of_v<Drawable, T>
+        T& makeDrawable(Args&&... args) {
+            std::lock_guard lock(drawables_mutex);
+            auto raw_drawable = new T(BadgedRef(*this), std::forward<Args>(args)...);
+            auto owned = std::unique_ptr<T>(raw_drawable);
+            drawables.push_back(std::move(owned));
+            return *raw_drawable;
+        }
+
+        virtual Window& getWindow() = 0;
+
+        void remove(const Drawable& d);
+
+        /**
+         * \internal
+         * Called by a drawable to signal that it needs to be redrawn.
+         * \param d drawable that needs to be redrawn
+         */
+        template<class T>
+        requires std::is_base_of_v<Drawable, T>
+        void needsPartialRedraw(Badge<T>, const T& d) {
+            const auto area = d.getDrawArea();
+            std::list<Rect> dirtyAndVisible = { area };  // TODO: think how to avoid a dynamic container here
+
+            {
+                std::scoped_lock lock(drawables_mutex);
+                auto it = drawables.rbegin();
+                for (; it != drawables.rend() && it->get() != &d; ++it) {
+                    const auto intersection = (*it)->getDrawArea().intersection(area);
+                    if (intersection.empty())
+                        continue;
+
+                    dirtyAndVisible = Rect::subtractRect(dirtyAndVisible, intersection);
+                }
+
+                if (it == drawables.rend()) {
+                    // d doesn't intersect with anything else. full redraw
+                    dirtyAndVisible = { area };
+                }
+            }
+
+            for (const auto& r: dirtyAndVisible)
+                if (!r.empty())
+                    needsRedrawForRect(r);
+        }
+
+        virtual ~DrawableOwner() = default;
     };
 }
 

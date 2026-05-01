@@ -66,23 +66,7 @@ namespace mxgui {
         Window(Point p, WindowPreferences&& prefs);
 
         /**
-         * Draws anything belonging to this window that needs a redraw inside the area of this window.
-         * Also, only draws areas requested via requestedRects.
-         *
-         * @param dc a reference to the DrawingContext through which the window should be drawn
-         * @param requestedRects a list of Rects to limit the scope of this drawing
-         */
-        void clippedRedraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const;
-
-        /**
-         * Draws anything belonging to this window that needs a redraw inside the area of this window.
-         *
-         * @param dc a reference to the DrawingContext through which the window should be drawn
-         */
-        void clippedRedraw(DrawingContext& dc) const { clippedRedraw(dc, visibleRects); }
-
-        /**
-         * Draws anything belonging to this window regardless of its invalidation state.
+         * Draws anything belonging to this window.
          * Also, only draws areas requested via requestedRects.
          *
          * @param dc a reference to the DrawingContext through which the window should be drawn
@@ -91,18 +75,20 @@ namespace mxgui {
         void clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const;
 
         /**
-         * Draws anything belonging to this window regardless of its invalidation state.
+         * Draws anything belonging to this window within all its visible region.
          *
          * @param dc a reference to the DrawingContext through which the window should be drawn
          */
-        void clippedDraw(DrawingContext& dc) const { clippedDraw(dc, visibleRects); }
+        void clippedDraw(DrawingContext& dc) const;
 
         /**
          * \internal
          * Called by the window manager to send user events to this window.
          * \param e event to post
          */
-        void postEvent(Event e);
+        void postEvent(Event e) {
+            hitTestAndDispatch(e);
+        }
 
         /**
          * \internal

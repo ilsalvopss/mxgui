@@ -243,6 +243,18 @@ void WindowManager::pushMessage(WMMessage&& m)  {
     cond.notify_one();
 }
 
+Window& WindowManager::hitTest(Point p) {
+    std::scoped_lock lock(stack_mutex);
+
+    // traverse the stack topmost to bottom, and return the first window whose bounding box contains the point
+    for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
+        if (const auto& w = *it; w->boundingBox.contains(p))
+            return *w;
+    }
+
+    // shouldn't ever reach here: there's the desktop
+}
+
 void WindowManager::loop() {
     bool redrawNeeded = false;
 
@@ -289,12 +301,26 @@ void WindowManager::loop() {
                 case WMMessage::Kind::BringToFront: {
                     auto* w = msg->window;
                     bringToFront(*w); // create a non-owning shared_ptr
-                    w->dirtyRects.clear(); // FIXME: what??
+                    w->dirtyRects.clear();
                 }
                 break;
                 case WMMessage::Kind::Move: {
                     auto* w = msg->window;
                     moveWindow(*w, msg->rect.first); // the new position is stored in the first point of the rect
+                }
+                break;
+                case WMMessage::Kind::Input: {
+                    const auto& e = msg->event;
+                    if (e.hasValidPoint()) {
+                        auto& w = hitTest(e.getPoint());
+                        if (&w != stack.begin()->get())
+                            bringToFront(w);
+                        w.postEvent(Event::translate(e, -w.position));
+                    }
+                    if (e.hasValidKey()) {
+                        const auto& w = *stack.end();
+                        w->postEvent(e);
+                    }
                 }
                 break;
                 default: {
@@ -315,7 +341,7 @@ void WindowManager::loop() {
                 if (w->dirtyRects.empty())
                     continue;
 
-                w->clippedRedraw(dc, w->dirtyRects);
+                w->clippedDraw(dc, w->dirtyRects);
                 w->dirtyRects.clear();
             }
         }

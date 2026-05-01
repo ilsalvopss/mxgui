@@ -102,6 +102,8 @@ public:
 private:
     WindowManager();
 
+    Window& hitTest(Point p);
+
     std::reference_wrapper<Display> display;
 
     std::mutex message_mutex;

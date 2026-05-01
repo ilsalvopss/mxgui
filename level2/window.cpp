@@ -42,33 +42,6 @@ Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
         );
 }
 
-void Window::clippedRedraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const {
-    for (const auto& requested: requestedRects) {
-        for (const auto& visible : visibleRects) {
-            auto requested_and_visible = requested.intersection(visible);
-            if (requested_and_visible.empty())
-                continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
-
-            const auto localRegion = requested_and_visible.translate(-position);
-            auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
-            for (auto& drawable: drawables) {
-                if (!drawable->needsRedraw())
-                    continue;
-
-                if (drawable->getDrawArea().intersection(localRegion).empty())
-                    continue;
-
-                drawable->draw<Window>({}, clippedDc);
-            }
-        }
-    }
-
-    for (const auto& drawable: drawables) {
-        if (drawable->needsRedraw())
-            drawable->redrawDone<Window>({});
-    }
-}
-
 void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRects) const {
     for (const auto& requested: requestedRects) {
         for (const auto& visible : visibleRects) {
@@ -77,21 +50,30 @@ void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRec
                 continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
 
             auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
+            std::scoped_lock lock(drawables_mutex);
+
             for (const auto& drawable: drawables) {
                 if (drawable->getDrawArea().intersection(requested_and_visible.translate(-position)).empty())
                     continue;
 
                 drawable->draw<Window>({}, clippedDc);
             }
-
-            /*for (const auto& drawable : drawables) {
-                if (drawable->needsRedraw())
-                    drawable->redrawDone<Window>({});
-            }*/
         }
     }
+}
 
-    //redrawNeeded=false;
+void Window::clippedDraw(DrawingContext& dc) const {
+    for (const auto& visible : visibleRects) {
+        auto clippedDc = ClippedDrawingContext(dc, visible, position);
+        std::scoped_lock lock(drawables_mutex);
+
+        for (const auto& drawable: drawables) {
+            if (drawable->getDrawArea().intersection(visible.translate(-position)).empty())
+                continue;
+
+            drawable->draw<Window>({}, clippedDc);
+        }
+    }
 }
 
 void Window::needsRedrawForRect(const Rect& r) {
