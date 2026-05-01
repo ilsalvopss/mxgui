@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011, 2012, 2013, 2014 by Terraneo Federico             *
+ *                                   2026 by Salvatore Passaro             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -89,32 +90,41 @@ void WindowManager::closeWindow(Window& w) {
         w.onClose();
 
     std::scoped_lock lock(stack_mutex);
+    const auto victim = std::find_if(
+        stack.rbegin(), stack.rend(),
+        [&w](const std::shared_ptr<Window>& ptr) {
+            return ptr.get() == &w;
+        }
+    );
 
-    const auto victim = std::find_if(stack.begin(), stack.end(),
-        [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; });
-    if (victim == stack.end())
+    if (victim == stack.rend())
         return;
 
-    // windows below w are [begin, victim)
-    for (auto it = stack.begin(); it != victim; ++it) {
-        const auto& other = *it;
+    auto stillToClear = std::move(w.visibleRects);
+    auto dc = DrawingContext(display);
 
-        if (other->boundingBox.intersection(w.boundingBox).empty())
+    for (auto it = std::next(victim); it != stack.rend() && !stillToClear.empty(); ++it) {
+        const auto& other = *it;
+        std::list<Rect> exposed;
+
+        for (const auto& dirty : stillToClear) {
+            if (auto r = dirty.intersection(other->boundingBox); !r.empty())
+                exposed.push_back(r);
+        }
+
+        if (exposed.empty())
             continue;
 
-        auto dc = DrawingContext(display);
+        for (const auto& r : exposed)
+            other->visibleRects.push_back(r);
 
-        for (const auto& region : w.visibleRects) {
-            auto intersection = region.intersection(other->boundingBox);
-            if (intersection.empty())
-                continue;
+        other->clippedDraw(dc, exposed);
 
-            other->visibleRects.push_back(intersection);
-            other->clippedDraw(dc, {intersection});
-        }
+        for (const auto& r : exposed)
+            stillToClear = Rect::subtractRect(stillToClear, r);
     }
 
-    stack.erase(victim);
+    stack.erase(std::prev(victim.base()));
 }
 
 void WindowManager::recomputeVisibleRegions(const bool alsoDraw)

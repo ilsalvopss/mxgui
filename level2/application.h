@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2011, 2012, 2013, 2014 by Terraneo Federico             *
+ *                                   2026 by Salvatore Passaro             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -70,7 +71,8 @@ public:
         explicit WMMessage(Event&& e) : kind(Kind::Input), event(std::move(e)) {}
 
         WMMessage(Window* w, Rect r) : kind(Kind::WakeRepaint), window(w), rect(std::move(r)) {}
-        WMMessage(Window* w, Point to) : kind(Kind::Move), window(w), rect(Point(to.x(), to.y()), Point(to.x(), to.y())) {}
+        WMMessage(Window* w, const Point to) : kind(Kind::Move), window(w),
+                                               rect(Point(to.x(), to.y()), Point(to.x(), to.y())) {}
         WMMessage(Window* w, const Kind k) : kind(k), window(w) {}
     };
 
