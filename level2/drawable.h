@@ -31,7 +31,7 @@ namespace mxgui {
         /**
          * \return the draw area of the object
          */
-        [[nodiscard]] Rect getDrawArea() const { return da; }
+        [[nodiscard]] virtual Rect getDrawArea() const { return da; }
 
         template<class T>
         requires std::is_base_of_v<DrawableOwner, T>

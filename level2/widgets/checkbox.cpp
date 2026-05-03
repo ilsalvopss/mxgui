@@ -37,13 +37,17 @@ namespace mxgui::widgets {
 CheckBox::CheckBox(BadgedRef<DrawableOwner> owner, Point p, short dimension, const string& text, bool checked)
     : InteractableButton(std::move(owner),Rect(p,Point(p.x()+dimension,p.y()+dimension)))
 {
-    int textLen = (*owner).getWindow().getPreferences().font.calculateLength(text.c_str());
+    auto textLen = (*owner).getWindow().getPreferences().font.calculateLength(text.c_str());
     this->checked=checked;
     this->colors=make_pair(black,lightGrey);
     this->labelStartingPoint = Point(p.x()+dimension+4,p.y());
     this->text = &makeDrawable<Label>(this->labelStartingPoint,textLen,dimension,text);
     this->text->setXAlignment(Alignment::LEFT);
     this->text->setYAlignment(Alignment::CENTER);
+    this->da = {
+        p,
+        {static_cast<short int>(p.x() + dimension + textLen + 4), static_cast<short int>(p.y() + dimension)}
+    };
     enqueueForRedraw();
 }
 

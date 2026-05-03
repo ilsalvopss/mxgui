@@ -55,12 +55,15 @@ public:
     */
     virtual bool isChecked();
 
+    Rect getDrawArea() const override { return da; }
+
     /**
      * Implements DrawableOwner::getWindow.
      * @return window to which this button belongs
      */
     Window& getWindow() override { return owner.getWindow(); }
 protected:
+    Rect da;
     bool checked; ///< True if the checkbox is checked
     
 private:
