@@ -22,11 +22,6 @@ namespace mxgui {
      */
     class Drawable
     {
-        // makeDrawable hands out a reference to Drawables for immediate use.
-        // let's disallow copying
-        Drawable(const Drawable&) = delete;
-        Drawable& operator=(const Drawable&) = delete;
-
     public:
         /**
          * \return the draw area of the object
@@ -40,6 +35,11 @@ namespace mxgui {
         template<class T>
         requires std::is_base_of_v<DrawableOwner, T>
         void event(Badge<T>, Event& e) { onEvent(e); }
+
+        // makeDrawable hands out a reference to Drawables for immediate use.
+        // let's disallow copying
+        Drawable(const Drawable&) = delete;
+        Drawable& operator=(const Drawable&) = delete;
 
         /**
          * Destructor
@@ -65,17 +65,22 @@ namespace mxgui {
 
         /**
          * \internal
-         * Override this member function to draw the object. Called by the parent DrawableOwner (and eventually by a Window).
-         * Note that this is going to run inside the window manager thread, so avoid blocking
-         * too much inside here and mind concurrent access to shared data.
+         * Override this member function to draw the object. Called by the parent DrawableOwner
+         * (and eventually by a Window). Note that this is going to run inside the window manager thread,
+         * so avoid blocking too much inside here and mind concurrent access to shared data.
+         *
+         * Note: the drawing context will use coordinates local to the Window at the top of your DrawableOwner's chain.
          * \param dc drawing context used to draw the object
          */
         virtual void onDraw(DrawingContextProxy& dc)=0;
 
         /**
          * \internal
-         * Override this member function to handle user input events. Called by the
-         * parent Window, do not call this directly.
+         * Override this member function to handle user input events. Called by the parent DrawableOwner
+         * (and eventually by a Window). Note that this is going to run inside the window manager thread,
+         * so avoid blocking too much inside here and mind concurrent access to shared data.
+         *
+         * Unhandled events are dropped silently!
          * \param e event
          */
         virtual void onEvent(Event e) {}
@@ -96,10 +101,15 @@ namespace mxgui {
      *
      * It is the DrawableOwner's responsibility to manage the lifetime of the drawables it owns,
      * and to call their onDraw() function when needed.
-     *
-     * TODO: when implementing events, it is also the DrawableOwner's responsibility to forward events to the drawables it owns
      */
     class DrawableOwner {
+        /**
+         * Override this to decide how you want to redraw your drawables.
+         * You should (probably) eventually forward this to your owner (which may be the Window);
+         *
+         * @param r region that needs to be redrawn, in the coordinate system of the Window
+         *          at the top of the DrawableOwner's chain
+         */
         virtual void needsRedrawForRect(const Rect& r) = 0;
 
     protected:
