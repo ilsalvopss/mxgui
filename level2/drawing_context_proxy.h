@@ -341,9 +341,14 @@ class ClippedDrawingContext final : public DrawingContextProxy { // FIXME
     const Point origin;
     DrawingContext& dc;
 
+    const Font originalFont;
+    const std::pair<Color,Color> originalColors;
+
 public:
     ClippedDrawingContext(DrawingContext& dc, Rect r, Point origin = {0,0}) : clippingRect(std::move(r)),
-                                                                                  origin(origin), dc(dc) {}
+                                                                                  origin(origin), dc(dc),
+                                                                                  originalFont(dc.getFont()),
+                                                                                  originalColors(dc.getTextColor()){}
 
     /**
      * Write text to the display in our clipping region. If text is too long it will be truncated
@@ -439,7 +444,7 @@ public:
      * \param b lower right corner of the rectangle
      * \param c color of the line
      */
-    void drawRectangle(const Point a, const Point b, const Color c) override;
+    void drawRectangle(Point a, Point b, Color c) override;
 
     /**
      * \return the clippingRect's height
@@ -461,7 +466,6 @@ public:
      * background one
      */
     void setTextColor(const std::pair<Color,Color> colors) override {
-        // FIXME: this is not really ideal, as it changes the text color of the whole display, but it's better than nothing
         dc.setTextColor(colors);
     }
 
@@ -469,7 +473,6 @@ public:
      * \return a pair with the foreground and background color
      */
     [[nodiscard]] std::pair<Color,Color> getTextColor() const override {
-        // FIXME: this is not really ideal, as it returns the text color of the whole display, but it's better than nothing
         return dc.getTextColor();
     }
 
@@ -478,7 +481,6 @@ public:
      * \param font new font
      */
     void setFont(const Font& font) override {
-        // FIXME: this is not really ideal, as it changes the font of the whole display, but it's better than nothing
         dc.setFont(font);
     }
 
@@ -486,8 +488,13 @@ public:
      * \return the current font used to draw text
      */
     [[nodiscard]] Font getFont() const override {
-        // FIXME: this is not really ideal, as it returns the font of the whole display, but it's better than nothing
         return dc.getFont();
+    }
+
+    ~ClippedDrawingContext() override {
+        // let's be polite and restore the underlying dc state before us
+        dc.setFont(originalFont);
+        dc.setTextColor(originalColors);
     }
 };
 
