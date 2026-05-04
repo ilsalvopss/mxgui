@@ -35,7 +35,7 @@ namespace mxgui {
 // class DrawingContextProxy
 //
 
-DrawingContextProxy::~DrawingContextProxy() {}
+DrawingContextProxy::~DrawingContextProxy() = default;
 
 //
 // class FullScreenDrawingContextProxy
@@ -200,11 +200,19 @@ void ClippedDrawingContext::clippedDrawImage(const Point p, const Point a, const
 }
 
 void ClippedDrawingContext::drawRectangle(const Point a, const Point b, const Color c) {
-    const auto intersection = clippingRect.intersection({origin + a, origin + b});
-    if (intersection.empty())
+    const auto absoluteRect = Rect{origin + a, origin + b};
+    if (clippingRect.contains(absoluteRect)) {
+        dc.drawRectangle(absoluteRect.first, absoluteRect.second, c);
+        return;
+    }
+
+    if (clippingRect.intersection(absoluteRect).empty())
         return; // rectangle is completely outside clippingRect, don't draw anything
 
-    dc.drawRectangle(intersection.first, intersection.second, c);
+    line(a, {b.x(), a.y()}, c);  // top
+    line({a.x(), b.y()}, b, c);   // bottom
+    line(a, {a.x(), b.y()}, c);  // left
+    line({b.x(), a.y()}, b, c);   // right
 }
 
 } //namespace miosix
