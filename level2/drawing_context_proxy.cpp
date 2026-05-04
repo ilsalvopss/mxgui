@@ -158,7 +158,24 @@ void ClippedDrawingContext::clear(const Point p1, const Point p2, const Color co
 }
 
 void ClippedDrawingContext::line(const Point a, const Point b, const Color color) {
-    dc.clippedLine(origin + a, origin + b, clippingRect.first, clippingRect.second, color);
+    const auto absolute_a = origin + a;
+    const auto absolute_b = origin + b;
+
+    const Rect lineBounds {
+            {
+                std::min(absolute_a.x(), absolute_b.x()),
+                std::min(absolute_a.y(), absolute_b.y())
+            },
+            {
+                std::max(absolute_a.x(), absolute_b.x()),
+                std::max(absolute_a.y(), absolute_b.y())
+            }
+    };
+
+    if (clippingRect.intersection(lineBounds).empty())
+        return; // line bounding box is completely outside clippingRect
+
+    dc.clippedLine(absolute_a, absolute_b, clippingRect.first, clippingRect.second, color);
 }
 
 void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const unsigned short length) {
