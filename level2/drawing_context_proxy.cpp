@@ -207,6 +207,29 @@ void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const u
     dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0 + 1);
 }
 
+void ClippedDrawingContext::scanLineBuffer(const Point p, const unsigned short length) {
+    if (length == 0)
+        return;
+
+    const auto absolute_p = origin + p;
+    if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() > clippingRect.second.y())
+        return;
+
+    auto x0 = absolute_p.x();
+    auto x1 = absolute_p.x() + length - 1;
+
+    if (x1 < clippingRect.first.x() || x0 > clippingRect.second.x())
+        return;
+
+    if (x0 < clippingRect.first.x())
+        x0 = clippingRect.first.x();
+
+    if (x1 > clippingRect.second.x())
+        x1 = clippingRect.second.x();
+
+    dc.scanLineBuffer({ x0, absolute_p.y() }, x1 - x0 + 1);
+}
+
 void ClippedDrawingContext::drawImage(const Point p, const ImageBase& img) {
     dc.clippedDrawImage(origin + p, clippingRect.first, clippingRect.second, img);
 }

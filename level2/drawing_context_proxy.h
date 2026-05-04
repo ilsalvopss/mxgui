@@ -402,10 +402,9 @@ public:
     /**
      * \return a buffer of length equal to this->getWidth() that can be used to
      * render a scanline.
-     * TODO: this could require to implement some sort of buffering here... let me think about it
      */
     Color *getScanLineBuffer() override {
-        return dc.getScanLineBuffer() + clippingRect.first.x();
+        return dc.getScanLineBuffer() + origin.x();
     }
 
     /**
@@ -414,11 +413,8 @@ public:
      * \param p starting point of the line
      * \param length length of colors array.
      * p.x()+length must be <= display.width()
-     * TODO: this could require to implement some sort of buffering here... let me think about it
      */
-    void scanLineBuffer(const Point p, const unsigned short length) override {
-        dc.scanLineBuffer(clippingRect.first + p, length);
-    }
+    void scanLineBuffer(const Point p, const unsigned short length) override;
 
     /**
      * Draw an image on the screen
