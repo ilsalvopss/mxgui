@@ -56,7 +56,6 @@ public:
      * Write text to the display. If text is too long it will be truncated
      * \param p point where the upper left corner of the text will be printed
      * \param text, text to print.
-     * TODO: maybe std::string_view?
      */
     virtual void write(Point p, const char *text)=0;
 
@@ -332,11 +331,12 @@ private:
 };
 
 /**
+ * \ingroup pub_iface_2
  * This proxy forwards operations to the underlying DrawingContext, with two main differences:
  * 1) it only draws in a specific area of the screen, defined by clippingRect
  * 2) it translates all coordinates by origin
  */
-class ClippedDrawingContext final : public DrawingContextProxy { // FIXME
+class ClippedDrawingContext final : public DrawingContextProxy {
     const Rect clippingRect;
     const Point origin;
     DrawingContext& dc;
@@ -345,7 +345,7 @@ class ClippedDrawingContext final : public DrawingContextProxy { // FIXME
     const std::pair<Color,Color> originalColors;
 
 public:
-    ClippedDrawingContext(DrawingContext& dc, Rect r, Point origin = {0,0}) : clippingRect(std::move(r)),
+    ClippedDrawingContext(DrawingContext& dc, Rect r, const Point origin = {0,0}) : clippingRect(std::move(r)),
                                                                                   origin(origin), dc(dc),
                                                                                   originalFont(dc.getFont()),
                                                                                   originalColors(dc.getTextColor()){}
@@ -403,28 +403,25 @@ public:
      * \return a buffer of length equal to this->getWidth() that can be used to
      * render a scanline.
      */
-    Color *getScanLineBuffer() override {
-        return dc.getScanLineBuffer() + origin.x();
-    }
+    Color *getScanLineBuffer() override { return dc.getScanLineBuffer() + origin.x(); }
 
     /**
      * Draw the content of the last getScanLineBuffer() on an horizontal line
-     * on the screen.
+     * on the screen, clipped by our clippingRect.
      * \param p starting point of the line
      * \param length length of colors array.
-     * p.x()+length must be <= display.width()
      */
-    void scanLineBuffer(const Point p, const unsigned short length) override;
+    void scanLineBuffer(Point p, unsigned short length) override;
 
     /**
-     * Draw an image on the screen
+     * Draw an image on the screen, clipped by our clippingRect
      * \param p point of the upper left corner where the image will be drawn
      * \param img image to draw
      */
     void drawImage(Point p, const ImageBase& img) override;
 
     /**
-     * Draw part of an image on the screen
+     * Draw part of an image within the clippingRect
      * \param p point of the upper left corner where the image will be drawn.
      * Negative coordinates are allowed, as long as the clipped view has
      * positive or zero coordinates
@@ -435,7 +432,7 @@ public:
     void clippedDrawImage(Point p, Point a, Point b, const ImageBase& img) override;
 
     /**
-     * Draw a rectangle (not filled) with the desired color
+     * Draw a rectangle (not filled) with the desired color within the clippingRect
      * \param a upper left corner of the rectangle
      * \param b lower right corner of the rectangle
      * \param c color of the line
@@ -461,31 +458,23 @@ public:
      * \param colors a pair where first is the foreground color, and second the
      * background one
      */
-    void setTextColor(const std::pair<Color,Color> colors) override {
-        dc.setTextColor(colors);
-    }
+    void setTextColor(const std::pair<Color,Color> colors) override { dc.setTextColor(colors); }
 
     /**
      * \return a pair with the foreground and background color
      */
-    [[nodiscard]] std::pair<Color,Color> getTextColor() const override {
-        return dc.getTextColor();
-    }
+    [[nodiscard]] std::pair<Color,Color> getTextColor() const override { return dc.getTextColor(); }
 
     /**
      * Set the font used for writing text
      * \param font new font
      */
-    void setFont(const Font& font) override {
-        dc.setFont(font);
-    }
+    void setFont(const Font& font) override { dc.setFont(font); }
 
     /**
      * \return the current font used to draw text
      */
-    [[nodiscard]] Font getFont() const override {
-        return dc.getFont();
-    }
+    [[nodiscard]] Font getFont() const override { return dc.getFont(); }
 
     ~ClippedDrawingContext() override {
         // let's be polite and restore the underlying dc state before us
