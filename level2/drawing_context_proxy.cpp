@@ -162,14 +162,17 @@ void ClippedDrawingContext::line(const Point a, const Point b, const Color color
 }
 
 void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const unsigned short length) {
+    if (length == 0)
+        return;
+
     const auto absolute_p = origin + p;
-    if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() >= clippingRect.second.y())
+    if (absolute_p.y() < clippingRect.first.y() || absolute_p.y() > clippingRect.second.y())
         return; // line is completely outside clippingRect (vertically), don't draw anything
 
     auto x0 = absolute_p.x();
-    auto x1 = absolute_p.x() + length;
+    auto x1 = absolute_p.x() + length - 1;
 
-    if (x1 <= clippingRect.first.x() || x0 >= clippingRect.second.x())
+    if (x1 < clippingRect.first.x() || x0 > clippingRect.second.x())
         return; // line is completely outside clippingRect (horizontally), don't draw anything
 
     if (x0 < clippingRect.first.x()) {
@@ -184,7 +187,7 @@ void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const u
     if (x1 > clippingRect.second.x()) // line ends after clippingRect
         x1 = clippingRect.second.x(); // update x1 to the last pixel inside clippingRect
 
-    dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0);
+    dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0 + 1);
 }
 
 void ClippedDrawingContext::drawImage(const Point p, const ImageBase& img) {
