@@ -57,7 +57,7 @@ public:
      * \param img the image (whose storage will also be managed by this widget)
      */
     template<typename ImageType>
-    requires std::is_base_of_v<ImageBase, ImageType>
+    requires (std::is_base_of_v<ImageBase, ImageType> && !std::is_reference_v<ImageType>)
     Image(BadgedRef<DrawableOwner>&& owner, const Point p, ImageType&& img) :
     Drawable(std::move(owner), computeDrawArea(p, img)),
     img(std::make_unique<ImageType>(std::forward<ImageType>(img)))
@@ -71,7 +71,7 @@ public:
      * \param image new image to display
      */
     template<typename ImageType>
-    requires std::is_base_of_v<ImageBase, ImageType>
+    requires (std::is_base_of_v<ImageBase, ImageType> && !std::is_reference_v<ImageType>)
     void setImage(ImageType&& image)
     {
         img = std::make_unique<ImageType>(std::forward<ImageType>(image));
