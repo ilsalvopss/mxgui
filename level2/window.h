@@ -40,7 +40,7 @@ namespace mxgui {
 
     class Window final : public DrawableOwner {
         friend class WindowManager;
-        using CloseFn = void(*)();
+        using CloseFn = std::function<void()>;
 
         /**
          * \internal
@@ -124,6 +124,7 @@ namespace mxgui {
              * Registers a callback to be called when the window is about to be closed.
              *
              * Note that a single callback can be registered for each window.
+             * Also note that the callback will run in the WindowManager thread so mind blocking too much inside here.
              * @param f the callback to call when the window is about to be closed
              */
             void registerOnClose(const CloseFn f) const {
