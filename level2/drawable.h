@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "input.h"
 #include "badge.h"
 #include "drawing_context_proxy.h"
 #include "draw_area.h"
@@ -24,6 +25,9 @@ namespace mxgui {
     {
     public:
         /**
+         * Returns the draw area for this Drawable.
+         * Note that you can override this if the Drawable you're implementing needs
+         * to return something more complex than the area with which it was constructed.
          * \return the draw area of the object
          */
         [[nodiscard]] virtual Rect getDrawArea() const { return da; }
