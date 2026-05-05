@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2014 by Terraneo Federico                               *
+ *                 2026 by Salvatore Passaro                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -102,7 +103,17 @@ public:
      * p.x()+length must be <= display.width()
      */
     virtual void scanLine(Point p, const Color *colors, unsigned short length)=0;
-    
+
+    /**
+     * Draw a vertical line on screen.
+     * This member function takes an array of colors to be
+     * able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors whoase size must be b.y()-a.y()+1
+     * \param length length of colors array.
+     */
+    virtual void verticalScanLine(Point p, const Color* colors, unsigned short length) {};
+
     /**
      * \return a buffer of length equal to this->getWidth() that can be used to
      * render a scanline.
@@ -345,10 +356,17 @@ class ClippedDrawingContext final : public DrawingContextProxy {
     const std::pair<Color,Color> originalColors;
 
 public:
+    /**
+     * Constructs a ClippedDrawingContext
+     *
+     * @param dc underlying DrawingContext to use
+     * @param r the clipping region for this instance
+     * @param origin the origin point for this instance
+     */
     ClippedDrawingContext(DrawingContext& dc, Rect r, const Point origin = {0,0}) : clippingRect(std::move(r)),
-                                                                                  origin(origin), dc(dc),
-                                                                                  originalFont(dc.getFont()),
-                                                                                  originalColors(dc.getTextColor()){}
+                                                                                    origin(origin), dc(dc),
+                                                                                    originalFont(dc.getFont()),
+                                                                                    originalColors(dc.getTextColor()){}
 
     /**
      * Write text to the display in our clipping region. If text is too long it will be truncated
@@ -387,6 +405,16 @@ public:
      * \param color line color
      */
     void line(Point a, Point b, Color color) override;
+
+    /**
+     * Draw a vertical line on screen.
+     * This member function takes an array of colors to be
+     * able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors whoase size must be b.y()-a.y()+1
+     * \param length length of colors array.
+     */
+    void verticalScanLine(Point p, const Color* colors, unsigned short length) override;
 
     /**
      * Draw an horizontal line on the clippingRect.

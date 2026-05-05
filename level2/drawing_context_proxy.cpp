@@ -207,6 +207,39 @@ void ClippedDrawingContext::scanLine(const Point p, const Color *colors, const u
     dc.scanLine({ x0, absolute_p.y() }, colors, x1 - x0 + 1);
 }
 
+void ClippedDrawingContext::verticalScanLine(Point p, const Color* colors, unsigned short length) {
+    if (length == 0)
+        return;
+
+    const auto absolute_p = origin + p;
+    if (absolute_p.x() < clippingRect.first.x() || absolute_p.x() > clippingRect.second.x())
+        return; // line is completely outside clippingRect (horizontally), don't draw anything
+
+    auto y0 = absolute_p.y();
+    auto y1 = static_cast<short>(absolute_p.y() + length - 1);
+
+    if (y1 < clippingRect.first.y() || y0 > clippingRect.second.y())
+        return; // line is completely outside clippingRect (vertically), don't draw anything
+
+    if (y0 < clippingRect.first.y()) {
+        // line starts before clippingRect, skip the first pixels
+        const auto skip = clippingRect.first.y() - y0;
+        colors += skip;
+
+        // update y0 to the first pixel inside clippingRect
+        y0 = clippingRect.first.y();
+    }
+
+    if (y1 > clippingRect.second.y()) // line ends after clippingRect
+        y1 = clippingRect.second.y(); // update y1 to the last pixel inside clippingRect
+
+    dc.beginPixel();
+
+    for (auto y = y0; y <= y1; ++y) {
+        dc.setPixel({ absolute_p.x(), y }, *colors++);
+    }
+}
+
 void ClippedDrawingContext::scanLineBuffer(const Point p, const unsigned short length) {
     if (length == 0)
         return;
