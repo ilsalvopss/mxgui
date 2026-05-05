@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2015 by Terraneo Federico                               *
+ *                 2026 by Salvatore Passaro                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -39,7 +40,9 @@ namespace mxgui::widgets {
 // class SimplePlot
 //
 
-SimplePlot::SimplePlot(Point upperLeft, Point lowerRight) : upperLeft(upperLeft), lowerRight(lowerRight), font(defaultFont)
+SimplePlot::SimplePlot(BadgedRef<DrawableOwner>&& owner, Rect da) :
+    Drawable(std::move(owner), da),
+    upperLeft(da.first), lowerRight(da.second), font(defaultFont)
 {
     foreground=white;
     background=black;
@@ -50,24 +53,22 @@ SimplePlot::SimplePlot(Point upperLeft, Point lowerRight) : upperLeft(upperLeft)
     first=true;
 }
 
-void SimplePlot::draw(DrawingContext& dc, const vector<float>& data, Color color, bool fullRedraw)
+void SimplePlot::plot(const std::vector<float>& data, Color color, bool fullRedraw)
 {
     vector<Dataset> dataset;
-    dataset.push_back(Dataset(data,color));
-    draw(dc,dataset,fullRedraw);
+    dataset.emplace_back(data,color);
+    plot(dataset, fullRedraw);
 }
 
-void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool fullRedraw)
+void SimplePlot::plot(const vector<Dataset>& dataset, bool fullRedraw)
 {
-    if(first) fullRedraw=true;
-    
-    int numElem=0;
+    int n=0;
     if(dataset.empty()==false)
     {
-        numElem=dataset.front().data->size();
+        n=dataset.front().data->size();
         for(vector<Dataset>::const_iterator it=dataset.begin();it!=dataset.end();++it)
         {
-            if(it->data->size()!=static_cast<unsigned int>(numElem)) return; //For now inconsistent size unsupported
+            if(it->data->size()!=static_cast<unsigned int>(n)) return; //For now inconsistent size unsupported
             for(vector<float>::const_iterator it2=it->data->begin();it2!=it->data->end();++it2)
             {
                 ymin=min(ymin,*it2);
@@ -75,26 +76,38 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
             }
         }
     }
-    
+
+    {
+        std::scoped_lock lock(data_mutex);
+        if (fullRedraw)
+            first = true;
+
+        this->dataset = dataset;
+        numElem = n;
+    }
+
+    enqueueForRedraw();
+}
+
+void SimplePlot::onDraw(DrawingContextProxy& dc) {
     const int fh=font.getHeight();
     const int whitespaceBeforeTicks=1;
     const int ticksLength=4;
     const int ticksYspace=font.calculateLength("-8.8e+88"); //max space occupied by number()
     const int ticksXspace=fh;
-    
+
     //20 is a guess, it represents some pixels for the actual graph, not just axes
     if(lowerRight.x()-upperLeft.x()<ticksYspace+whitespaceBeforeTicks+ticksLength+20) return;
     if(lowerRight.y()-upperLeft.y()<ticksXspace+whitespaceBeforeTicks+ticksLength+20) return;
-    
-    StateSaver dcState(dc);
-    
+
     dc.setFont(font);
     dc.setTextColor(make_pair(foreground,background));
-    
-    if(fullRedraw) dc.clear(upperLeft,lowerRight,background);
-    
+
+    if(first) dc.clear(upperLeft,lowerRight,background);
+
+    std::scoped_lock lock(data_mutex);
     //Draw ticks
-    if(fullRedraw || ymin!=prevYmin)
+    if(first || ymin!=prevYmin)
     {
         prevYmin=ymin;
         //TODO: avoid clearing
@@ -104,7 +117,7 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
         dc.write(Point(upperLeft.x()+ticksYspace-font.calculateLength(xt.c_str()),
                        lowerRight.y()-ticksXspace-fh),xt.c_str());
     }
-    if(fullRedraw || ymax!=prevYmax)
+    if(first || ymax!=prevYmax)
     {
         prevYmax=ymax;
         //TODO: avoid clearing
@@ -121,16 +134,16 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
     string xt=number(numElem>2 ? numElem-1 : 1);
     dc.write(Point(lowerRight.x()-font.calculateLength(xt.c_str()),lowerRight.y()-fh),
              xt.c_str());
-    
+
     //Plot drawing area
     const int x1=upperLeft.x()+ticksYspace+whitespaceBeforeTicks+ticksLength+2;
     const int y1=upperLeft.y();
     const int x2=lowerRight.x();
     const int y2=lowerRight.y()-ticksXspace-whitespaceBeforeTicks-ticksLength-2;
     const int h=y2-y1+1;
-    
+
     //Draw axes
-    if(fullRedraw)
+    if(first)
     {
         dc.line(Point(x1-1,y1),Point(x1-1,y2+ticksLength),foreground);
         dc.line(Point(x1-1,y1),Point(x1-1-ticksLength,y1),foreground);
@@ -139,21 +152,21 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
         dc.write(Point(upperLeft.x()+ticksYspace+whitespaceBeforeTicks+ticksLength,
                        lowerRight.y()-fh),"0");
     }
-    
+
     if(numElem<2)
     {
         //Can't plot a single value (or zero values!)
         dc.clear(Point(x1,y1),Point(x2,y2),background);
         return;
     }
-    
+
     if(numElem<x2-x1)
     {
         //More points on screen than data points
-        
+
         //TODO: avoid clearing
         dc.clear(Point(x1,y1),Point(x2,y2),background);
-        
+
         const float incr=static_cast<float>(x2-x1+1)/static_cast<float>(numElem-1);
         for(vector<Dataset>::const_iterator it=dataset.begin();it!=dataset.end();++it)
         {
@@ -180,24 +193,24 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
         }
     } else {
         //More data points than points on screen
-        
+
         const float incr=static_cast<float>(numElem)/static_cast<float>(x2-x1+1);
         float xAcc=0.f;
-        
+
         vector<Color> buffer;
         buffer.resize(h);
         vector<pair<int,int> > prevY;
         prevY.resize(dataset.size(),make_pair(-1,-1));
-        
+
         for(int x=x1;x<=x2;x++)
         {
             fill(buffer.begin(),buffer.end(),background);
-            
+
             float xAccNext=xAcc+incr;
             int range1=min(static_cast<int>(xAcc),numElem-1);
             int range2=min(static_cast<int>(xAccNext),numElem);
             xAcc=xAccNext;
-            
+
             for(unsigned int i=0;i<dataset.size();i++)
             {
                 int yMin=numeric_limits<int>::max();
@@ -225,14 +238,10 @@ void SimplePlot::draw(DrawingContext& dc, const vector<Dataset>& dataset, bool f
                 }
                 prevY.at(i)=make_pair(yMin,yMax);
             }
-            
-            //TODO: we need a vertical scanline primitive to optimize this
-            dc.beginPixel();
-            for(int i=0;i<h;i++) dc.setPixel(Point(x,y2-i),buffer.at(i));
+
+            dc.verticalScanLine(Point(x,y1),buffer.data(),h);
         }
     }
-    
-    first=false;
 }
 
 string SimplePlot::number(float num)

@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2015 by Terraneo Federico                               *
+ *                 2026 by Salvatore Passaro                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -29,32 +30,30 @@
 
 #include <vector>
 #include <string>
-#include <display.h>
 #include <misc_inst.h>
+
+#include "../drawable.h"
 
 namespace mxgui::widgets {
 
-class Dataset
+class SimplePlot : public Drawable
 {
 public:
-    Dataset() : color(white) {}
-    Dataset(const std::vector<float>& data, Color color)
-        : data(&data), color(color) {}
-    
-    const std::vector<float>* data;
-    Color color;
-};
+    class Dataset
+    {
+    public:
+        Dataset(const std::vector<float>& data, Color color)
+            : data(&data), color(color) {}
 
-class SimplePlot
-{
-public:
-    SimplePlot(Point upperLeft, Point lowerRight);
+        const std::vector<float>* data;
+        Color color;
+    };
+
+    SimplePlot(BadgedRef<DrawableOwner>&& owner, Rect da);
     
-    void draw(DrawingContext& dc, const std::vector<float>& data,
-              Color color=white, bool fullRedraw=false);
+    void plot(const std::vector<float>& data, Color color=white, bool fullRedraw=false);
     
-    void draw(DrawingContext& dc, const std::vector<Dataset>& dataset,
-              bool fullRedraw=false);
+    void plot(const std::vector<Dataset>& dataset, bool fullRedraw=false);
 
     void setFont(const Font& font) { this->font=font; }
     
@@ -68,9 +67,14 @@ public:
     float ymax;
     
 private:
+    void onDraw(DrawingContextProxy& dc) override;
+
+    std::mutex data_mutex;
     std::string number(float num);
-    
+    std::vector<Dataset> dataset;
+    int numElem;
     bool first;
+
     float prevYmin,prevYmax;
 };
 
