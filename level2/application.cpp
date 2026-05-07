@@ -227,12 +227,14 @@ void WindowManager::moveWindow(Window& w, const Point to) {
 
         const auto newBoundingBox = Rect {
             to,
-            Point { static_cast<short int>(to.x() + w.prefs.width), static_cast<short int>(to.y() + w.prefs.height) }
+            Point {
+                static_cast<short int>(to.x() + w.prefs.width - 1),
+                static_cast<short int>(to.y() + w.prefs.height - 1)
+            }
         };
 
         w.position = to;
         w.boundingBox = newBoundingBox;
-        //w.visibleRects = { newBoundingBox };
     }
 
     // It's heavy but for now it's at least correct.
@@ -384,8 +386,8 @@ WindowManager::WindowManager() : display( DisplayManager::instance().getDisplay(
     });
 
     WindowPreferences desktop;
-    desktop.width = display.get().getWidth() - 1;
-    desktop.height = display.get().getHeight() - 1;
+    desktop.width = display.get().getWidth();
+    desktop.height = display.get().getHeight();
     desktop.background = rgb565(242,221,227);
     createWindow({0, 0}, std::move(desktop));
 }
