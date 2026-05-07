@@ -288,11 +288,8 @@ void WindowManager::loop() {
             switch (msg->kind) {
                 case WMMessage::Kind::Close: {
                     auto* w = msg->window;
-                    closeWindow(*w);
-                    // so now no more messages related to this window should arrive as the window
-                    // and its drawables are all destroyed
 
-                    // except the ones that are already in the queue. let's drain them
+                    // let's drain any further message in the queue.
                     {
                         std::unique_lock lock(message_mutex);
                         w->closing = true; // mark the window as closing, so that new messages are not accepted
@@ -301,26 +298,24 @@ void WindowManager::loop() {
                             return m.window == w;
                         });
                     }
-                }
-                break;
+
+                    closeWindow(*w);
+                } break;
                 case WMMessage::Kind::WakeRepaint: {
                     auto* w = msg->window;
                     w->dirtyRects.push_back(msg->rect);
                     redrawNeeded = true;
                     continue;
-                }
-                break;
+                } break;
                 case WMMessage::Kind::BringToFront: {
                     auto* w = msg->window;
-                    bringToFront(*w); // create a non-owning shared_ptr
+                    bringToFront(*w);
                     w->dirtyRects.clear();
-                }
-                break;
+                } break;
                 case WMMessage::Kind::Move: {
                     auto* w = msg->window;
                     moveWindow(*w, msg->rect.first); // the new position is stored in the first point of the rect
-                }
-                break;
+                } break;
                 case WMMessage::Kind::Input: {
                     const auto& e = msg->event;
                     if (e.hasValidPoint()) {
@@ -330,11 +325,11 @@ void WindowManager::loop() {
                         w.postEvent(Event::translate(e, -w.position));
                     }
                     if (e.hasValidKey()) {
-                        const auto& w = *stack.end();
+                        // topmost window gets key events
+                        const auto& w = stack.back();
                         w->postEvent(e);
                     }
-                }
-                break;
+                } break;
                 default: {
                     std::cout << "got unsupported event" << std::endl;
                 }
