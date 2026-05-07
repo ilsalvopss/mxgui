@@ -36,7 +36,7 @@ namespace mxgui::widgets {
 /**
  * A basic interactive Button.
  */
-class Button : public InteractableButton, DrawableOwner
+class Button : public InteractableButton, public DrawableOwner
 {
 public:
     /**
@@ -86,7 +86,6 @@ protected:
     */
     virtual void buttonUp();
 
-private:
     /**
      * \internal
      * Overridden this member function to draw the object.
