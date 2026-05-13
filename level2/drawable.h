@@ -1,8 +1,29 @@
-//
-// Created by Salvo Passaro on 16/04/26.
-// This file is part of mxgui
-// and is licensed as the rest of this project.
-//
+/***************************************************************************
+ *   Copyright (C) 2026 by Salvatore Passaro                               *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   As a special exception, if other files instantiate templates or use   *
+ *   macros or inline functions from this file, or you compile this file   *
+ *   and link it with other works to produce a work based on this file,    *
+ *   this file does not by itself cause the resulting work to be covered   *
+ *   by the GNU General Public License. However the source code for this   *
+ *   file must still be made available in accordance with the GNU General  *
+ *   Public License. This exception does not invalidate any other reasons  *
+ *   why a work based on this file might be covered by the GNU General     *
+ *   Public License.                                                       *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
+ ***************************************************************************/
 
 #pragma once
 
@@ -10,6 +31,8 @@
 #include "badge.h"
 #include "drawing_context_proxy.h"
 #include "draw_area.h"
+#include <mutex>
+#include <memory>
 
 #ifdef MXGUI_LEVEL_2
 
@@ -32,10 +55,18 @@ namespace mxgui {
          */
         [[nodiscard]] virtual Rect getDrawArea() const { return da; }
 
+        /**
+         * Drawing entry point accessible only to DrawableOwner(s)
+         * It simply forwards the call to onDraw() but guarantees that no user code misuses the API.
+         */
         template<class T>
         requires std::is_base_of_v<DrawableOwner, T>
         void draw(Badge<T>, DrawingContextProxy& dc) { onDraw(dc); }
 
+        /**
+         * Event handling entry point accessible only to DrawableOwner(s)
+         * It simply forwards the call to onEvent() but guarantees that no user code misuses the API.
+         */
         template<class T>
         requires std::is_base_of_v<DrawableOwner, T>
         void event(Badge<T>, Event& e) { onEvent(e); }
@@ -99,12 +130,12 @@ namespace mxgui {
     };
 
     /**
-     * A DrawableOwner is any object that can contain drawables, such as a Window or a Widget.
+     * A DrawableOwner is any object that can contain drawables, such as a Window or a widget.
      * It provides the makeDrawable() function to create drawables and register them to the owner,
      * and the remove() function to remove them.
      *
      * It is the DrawableOwner's responsibility to manage the lifetime of the drawables it owns,
-     * and to call their onDraw() function when needed.
+     * and to call their draw() and event() functions when appropiate.
      */
     class DrawableOwner {
         /**
@@ -120,9 +151,23 @@ namespace mxgui {
         mutable std::recursive_mutex drawables_mutex;
         std::list<std::unique_ptr<Drawable>> drawables;
 
+        /**
+         * Helper to indentify the Drawable responsible for handling e and dispatch the event
+         *
+         * @param e event to dispatch
+         */
         void hitTestAndDispatch(Event& e);
 
     public:
+        /**
+         * Makes a Drawable of type T, with provided arguments, registers it to this owner and returns a reference
+         * for immediate use.
+         *
+         * @tparam T Drawable type
+         * @tparam Args construction argument types
+         * @param args construction arguments
+         * @return T& the drawable that was just created, ONLY for immediate use
+         */
         template<class T, class... Args>
         requires std::is_base_of_v<Drawable, T>
         T& makeDrawable(Args&&... args) {
@@ -133,8 +178,15 @@ namespace mxgui {
             return *raw_drawable;
         }
 
+        /**
+         * @return the Window on top of the DrawableOwner chain to which we belong
+         */
         virtual Window& getWindow() = 0;
 
+        /**
+         * Removes d
+         * @param d drawable to remove
+         */
         void remove(const Drawable& d);
 
         /**

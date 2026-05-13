@@ -265,6 +265,7 @@ Window& WindowManager::hitTest(Point p) {
     }
 
     // shouldn't ever reach here: there's the desktop
+    return *stack.front();
 }
 
 void WindowManager::loop() {
