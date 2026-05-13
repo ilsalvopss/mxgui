@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2014 by Terraneo Federico                               *
+ *                 2026 by Salvatore Passaro                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -67,6 +68,13 @@ void FullScreenDrawingContextProxy::clear(Point p1, Point p2, Color color)
 void FullScreenDrawingContextProxy::line(Point a, Point b, Color color)
 {
     dc.line(a,b,color);
+}
+
+void FullScreenDrawingContextProxy::verticalScanLine(Point p, const Color* colors, unsigned short length)
+{
+    for (auto y = p.y(); y <= p.y() + length; ++y) {
+        dc.setPixel({ p.x(), y }, *colors++);
+    }
 }
 
 void FullScreenDrawingContextProxy::scanLine(Point p, const Color *colors, unsigned short length)
