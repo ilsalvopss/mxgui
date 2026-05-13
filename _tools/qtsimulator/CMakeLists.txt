@@ -77,6 +77,7 @@ set(FOO_HEADERS window.h)
 include_directories(../..)
 # ../../.. is the main project directory
 include_directories(../../..)
+include_directories(../../config)
 add_definitions(-DMXGUI_LIBRARY)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
