@@ -37,14 +37,12 @@ using namespace std;
 
 namespace mxgui {
 
-WindowManager& WindowManager::instance()
-{
+WindowManager& WindowManager::instance() {
     static WindowManager singleton;
     return singleton;
 }
 
-Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& prefs)
-{
+Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& prefs) {
     const std::shared_ptr<Window> w(new Window(p, std::move(prefs)));
     w->visibleRects = { w->boundingBox };
 
@@ -59,22 +57,7 @@ Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& pr
 
             // they somehow overlap! the intersection of their bounding boxes is now being covered by w
             // we need to remove that intersection from the visible regions of the other window
-            std::list<Rect> updated_visible;
-            for (const auto& region : other->visibleRects) {
-                auto intersection = region.intersection(w->boundingBox);
-                if (intersection.empty()) {
-                    updated_visible.push_back(region);
-                    continue; // no intersection, check next visible region
-                }
-
-                auto newVisibleRegions = region - intersection;
-                for (const auto& newVisibleRegion : newVisibleRegions) {
-                    if (!newVisibleRegion.empty())
-                        updated_visible.push_back(newVisibleRegion);
-                }
-            }
-
-            other->visibleRects = std::move(updated_visible);
+            other->visibleRects = Rect::subtractRect(other->visibleRects, w->boundingBox);
         }
     }
     {
@@ -127,8 +110,7 @@ void WindowManager::closeWindow(Window& w) {
     stack.erase(std::prev(victim.base()));
 }
 
-void WindowManager::recomputeVisibleRegions(const bool alsoDraw)
-{
+void WindowManager::recomputeVisibleRegions(const bool alsoDraw) {
     std::list<Rect> alreadyVisible;
     std::scoped_lock lock(stack_mutex);
 
@@ -174,7 +156,10 @@ void WindowManager::bringToFront(Window& w) {
     {
         std::scoped_lock lock(stack_mutex);
 
-        const auto it = std::find_if(stack.begin(), stack.end(), [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; });
+        const auto it = std::find_if(
+            stack.begin(), stack.end(),
+            [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; }
+            );
         if (it == stack.end())
             return; // window not found, do nothing TODO: maybe we should throw an exception instead?
 
@@ -212,10 +197,10 @@ void WindowManager::bringToFront(Window& w) {
         }
 
         stack.splice(stack.end(), stack, it);
-    }
 
-    w.visibleRects.clear();
-    w.visibleRects.push_back(w.boundingBox);
+        w.visibleRects.clear();
+        w.visibleRects.push_back(w.boundingBox);
+    }
 
     auto dc = DrawingContext(display);
     w.clippedDraw(dc, uncoveredRegions);
@@ -242,7 +227,7 @@ void WindowManager::moveWindow(Window& w, const Point to) {
     recomputeVisibleRegions(true);
 }
 
-void WindowManager::pushMessage(WMMessage&& m)  {
+void WindowManager::pushMessage(WMMessage&& m) {
     {
         std::lock_guard lock(message_mutex);
 
@@ -255,7 +240,7 @@ void WindowManager::pushMessage(WMMessage&& m)  {
     cond.notify_one();
 }
 
-Window& WindowManager::hitTest(Point p) {
+Window& WindowManager::hitTest(const Point p) {
     std::scoped_lock lock(stack_mutex);
 
     // traverse the stack topmost to bottom, and return the first window whose bounding box contains the point
@@ -265,6 +250,7 @@ Window& WindowManager::hitTest(Point p) {
     }
 
     // shouldn't ever reach here: there's the desktop
+    // but... let's assume the worse and return the desktop anyway
     return *stack.front();
 }
 
