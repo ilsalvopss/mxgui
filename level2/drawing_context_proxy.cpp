@@ -72,6 +72,8 @@ void FullScreenDrawingContextProxy::line(Point a, Point b, Color color)
 
 void FullScreenDrawingContextProxy::verticalScanLine(Point p, const Color* colors, unsigned short length)
 {
+    dc.beginPixel();
+
     for (auto y = p.y(); y <= p.y() + length; ++y) {
         dc.setPixel({ p.x(), y }, *colors++);
     }
