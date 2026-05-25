@@ -71,6 +71,8 @@ void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRec
                 continue; // if the requested region doesn't intersect with this visible region, we don't need to draw it
 
             auto clippedDc = ClippedDrawingContext(dc, requested_and_visible, position);
+            clippedDc.setTextColor({prefs.foreground, prefs.background});
+            clippedDc.setFont(prefs.font);
             std::scoped_lock lock(drawables_mutex);
 
             for (const auto& drawable: drawables) {
@@ -86,6 +88,8 @@ void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRec
 void Window::clippedDraw(DrawingContext& dc) const {
     for (const auto& visible : visibleRects) {
         auto clippedDc = ClippedDrawingContext(dc, visible, position);
+        clippedDc.setTextColor({prefs.foreground, prefs.background});
+        clippedDc.setFont(prefs.font);
         std::scoped_lock lock(drawables_mutex);
 
         for (const auto& drawable: drawables) {
