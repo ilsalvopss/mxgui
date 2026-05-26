@@ -41,7 +41,7 @@ void demo1(std::atomic<bool>& run) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::seconds(4));
 
         for (auto& w : windows) {
             w.close();
@@ -52,6 +52,40 @@ void demo1(std::atomic<bool>& run) {
 }
 
 void demo2(std::atomic<bool>& run) {
+    auto prefs = WindowPreferences(140, 80, white, red, defaultFont);
+    auto w1 = WindowManager::instance().createWindow({0,130},std::move(prefs));
+    w1.make<widgets::Label>(Point(10,30), 120, 20, "This is a window!").setXAlignment(Alignment::CENTER);
+    w1.make<widgets::Button>(Point(110,5), 20, 20, "X").setCallback([w1] { w1.close(); });
+
+    prefs = WindowPreferences(180, 80, black, green, defaultFont);
+    auto w2 = WindowManager::instance().createWindow({20,150 },std::move(prefs));
+    w2.make<widgets::Label>(Point(10,10), 160, 20, "This is another window!").setXAlignment(Alignment::CENTER);
+    w2.make<widgets::Button>(Point(10,40), 160, 20, "Close me?").setCallback([w2] { w2.close(); });
+
+    prefs = WindowPreferences(120, 110, white, blue, defaultFont);
+    auto w3 = WindowManager::instance().createWindow({100,180 },std::move(prefs));
+
+    prefs = WindowPreferences(80, 60, green, black, defaultFont);
+    auto w4 = WindowManager::instance().createWindow({40,240 },std::move(prefs));
+    auto long_str= "This label shouldn't really fit inside this window... right?";
+    w4.make<widgets::Label>(Point(10,10), defaultFont.calculateLength(long_str), 20, long_str);
+
+    prefs = WindowPreferences(30, 180, black, lightGrey, defaultFont);
+    auto w5 = WindowManager::instance().createWindow({150,130 },std::move(prefs));
+
+
+    while (run) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    w1.close();
+    w2.close();
+    w3.close();
+    w4.close();
+    w5.close();
+}
+
+void demo3(std::atomic<bool>& run) {
     auto prefs = WindowPreferences(240, 175, white, black);
     auto w = WindowManager::instance().createWindow({0,140},std::move(prefs));
 
@@ -65,7 +99,7 @@ void demo2(std::atomic<bool>& run) {
         data2.push_back(20*(1+0.05*i));
 
         plotter.plot({{data1, red}, {data2, green}});
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         i += 2;
     }
 
@@ -73,7 +107,7 @@ void demo2(std::atomic<bool>& run) {
 }
 
 ENTRY() {
-    std::array demos = { &demo0, &demo1, &demo2 };
+    std::array demos = { &demo0, &demo1, &demo2, &demo3 };
     int demo_index = 0;
     std::atomic<bool> run_demo{true};
 
