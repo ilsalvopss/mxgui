@@ -201,6 +201,65 @@ void DisplayImpl::line(Point a, Point b, Color color)
     Line::draw(*this, a, b, color);
 }
 
+void DisplayImpl::clippedLine(Point a, Point b, Point c, Point d, Color color)
+{
+    //Horizontal line speed optimization
+    if(a.y()==b.y())
+    {
+        if(a.y()<c.y() || a.y()>d.y()) return;
+
+        auto x1=max(min(a.x(),b.x()),c.x());
+        auto x2=min(max(a.x(),b.x()),d.x());
+
+        if(x1>x2) return;
+
+        imageWindow(Point(x1,a.y()), Point(x2,a.y()));
+        Transaction ts(0x2c);
+        int numPixels=abs(x1-x2);
+        for(int i=0;i<=numPixels;i++)
+        {
+            ts.write(static_cast<unsigned char>(color >> 8));
+            ts.write(static_cast<unsigned char>(color & 0xFF));
+        }
+        return;
+    }
+    //Vertical line speed optimization
+    if(a.x()==b.x())
+    {
+        if(a.x()<c.x() || a.x()>d.x()) return;
+
+        auto y1=max(min(a.y(),b.y()),c.y());
+        auto y2=min(max(a.y(),b.y()),d.y());
+
+        if(y1>y2) return;
+
+        textWindow(Point(a.x(),y1), Point(a.x(),y2));
+        Transaction ts(0x2c);
+        int numPixels=abs(y1-y2);
+        for(int i=0;i<=numPixels;i++)
+        {
+            ts.write(static_cast<unsigned char>(color >> 8));
+            ts.write(static_cast<unsigned char>(color & 0xFF));
+        }
+        return;
+    }
+
+    //General case, always works but it is much slower due to the display
+    //not having fast random access to pixels
+    Line::draw(*this, a, b, color, c, d);
+}
+
+void DisplayImpl::verticalScanLine(Point p, const Color *colors, unsigned short length) {
+    textWindow(p, Point(p.x(), height-1));
+    Transaction ts(0x2c);
+
+    for(int i=0; i < length; i++)
+    {
+        ts.write(static_cast<unsigned char>(colors[i] >> 8));
+        ts.write(static_cast<unsigned char>(colors[i] & 0xFF));
+    }
+}
+
 void DisplayImpl::scanLine(Point p, const Color *colors, unsigned short length)
 {
     imageWindow(p,Point(width-1,p.y()));
