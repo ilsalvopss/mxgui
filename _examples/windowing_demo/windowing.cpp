@@ -4,6 +4,7 @@
 
 #include "mxgui/entry.h"
 #include <thread>
+#include <cmath>
 
 #include "misc_inst.h"
 #include "level2/application.h"
@@ -95,7 +96,7 @@ void demo3(std::atomic<bool>& run) {
     std::vector<float> data1;
     std::vector<float> data2;
     while (run) {
-        data1.push_back(20*(1+0.05*i)*sin(0.1*i));
+        data1.push_back(20*(1+0.05*i)*std::sin(0.1*i));
         data2.push_back(20*(1+0.05*i));
 
         plotter.plot({{data1, red}, {data2, green}});
