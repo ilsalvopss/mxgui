@@ -216,13 +216,13 @@ namespace mxgui {
         ~Window() override = default;
 
     private:
+        WindowPreferences prefs;                 ///< Window preferences
+
         Point position;                          ///< Position of the upper left corner of the window
         Rect boundingBox;                        ///< Cached bounding box of the window
 
         std::list<Rect> visibleRects;            ///< List of visible regions on the window, used to optimize redraws
         std::list<Rect> dirtyRects;              ///< List of invalidated regions on the window, used to optimize redraws
-
-        WindowPreferences prefs;                 ///< Window preferences
 
         CloseFn onClose = nullptr;
         bool closing = false;                    ///< True if the window is logically closed and its storage is still around
