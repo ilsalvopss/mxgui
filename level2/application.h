@@ -91,9 +91,10 @@ public:
 
     /**
      * This recomputes the visible regions of all windows, and optionally redraws them.
-     * @param alsoDraw if true, a draw is performed after having recomputed the visible regions.
+     * @param alsoDraw      if true, a draw is performed after having recomputed the visible regions.
+     * @param clippingRects  if alsoDraw is true, this list of Rects is used to limit the scope of the redraw
      */
-    void recomputeVisibleRegions(bool alsoDraw = false);
+    void recomputeVisibleRegions(bool alsoDraw = false, const std::list<Rect>& clippingRects = {});
 
     void pushMessage(WMMessage&& m);
 

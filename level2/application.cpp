@@ -109,7 +109,7 @@ void WindowManager::closeWindow(Window& w) {
     stack.erase(std::prev(victim.base()));
 }
 
-void WindowManager::recomputeVisibleRegions(const bool alsoDraw) {
+void WindowManager::recomputeVisibleRegions(const bool alsoDraw, const std::list<Rect>& clippingRects) {
     std::list<Rect> alreadyVisible;
     std::scoped_lock lock(stack_mutex);
 
@@ -138,7 +138,10 @@ void WindowManager::recomputeVisibleRegions(const bool alsoDraw) {
         w->visibleRects = std::move(visible);
         if (alsoDraw) {
             auto dc = DrawingContext(display);
-            w->clippedDraw(dc);
+            if (clippingRects.empty())
+                w->clippedDraw(dc);
+            else
+                w->clippedDraw(dc, clippingRects);
         }
 
         alreadyVisible.insert(
@@ -204,16 +207,17 @@ void WindowManager::bringToFront(Window& w) {
 }
 
 void WindowManager::moveWindow(Window& w, const Point to) {
+    const auto oldBoundingBox = w.boundingBox;
+    const auto newBoundingBox = Rect {
+        to,
+        Point {
+            static_cast<short int>(to.x() + w.prefs.width - 1),
+            static_cast<short int>(to.y() + w.prefs.height - 1)
+        }
+    };;
+
     {
         std::scoped_lock lock(stack_mutex);
-
-        const auto newBoundingBox = Rect {
-            to,
-            Point {
-                static_cast<short int>(to.x() + w.prefs.width - 1),
-                static_cast<short int>(to.y() + w.prefs.height - 1)
-            }
-        };
 
         w.position = to;
         w.boundingBox = newBoundingBox;
@@ -221,7 +225,7 @@ void WindowManager::moveWindow(Window& w, const Point to) {
 
     // It's heavy but for now it's at least correct.
     // The move requires a full stack traversal anyway
-    recomputeVisibleRegions(true);
+    recomputeVisibleRegions(true, { oldBoundingBox, newBoundingBox });
 }
 
 void WindowManager::pushMessage(WMMessage&& m) {
