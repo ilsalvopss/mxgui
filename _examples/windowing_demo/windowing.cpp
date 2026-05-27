@@ -18,9 +18,55 @@
 using namespace mxgui;
 
 void demo0(std::atomic<bool>& run) {
+    auto prefs = WindowPreferences(160, 25, black, rgb565(242,221,227), defaultFont);
+    auto w0 = WindowManager::instance().createWindow({30,140},std::move(prefs));
+    w0.make<widgets::Label>(Point(0,0), 160, 25, "I am below the bouncing window").setXAlignment(Alignment::CENTER);
+
+    prefs = WindowPreferences(100, 44, white, 2047);
+    auto w1 = WindowManager::instance().createWindow({0,110}, std::move(prefs));
+
+    prefs = WindowPreferences(160, 25, black, rgb565(242,221,227), defaultFont);
+    auto w2 = WindowManager::instance().createWindow({30,240},std::move(prefs));
+    w2.make<widgets::Label>(Point(0,0), 160, 25, "I am above the bouncing window").setXAlignment(Alignment::CENTER);
+
+    constexpr int screenW = 240;
+    constexpr int screenH = 200;
+    constexpr int winW = 100;
+    constexpr int winH = 44;
+
+    int x = 0;
+    int y = 0;
+    int vx = 2;
+    int vy = 1;
+
     while (run) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        x += vx;
+        y += vy;
+
+        if (x <= 0) {
+            x = 0;
+            vx = -vx;
+        } else if (x >= screenW - winW) {
+            x = screenW - winW;
+            vx = -vx;
+        }
+
+        if (y <= 0) {
+            y = 0;
+            vy = -vy;
+        } else if (y >= screenH - winH) {
+            y = screenH - winH;
+            vy = -vy;
+        }
+
+        w1.move(Point(x, 120+y));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    w0.close();
+    w1.close();
+    w2.close();
 }
 
 void demo1(std::atomic<bool>& run) {
@@ -74,9 +120,8 @@ void demo2(std::atomic<bool>& run) {
     prefs = WindowPreferences(30, 180, black, lightGrey, defaultFont);
     auto w5 = WindowManager::instance().createWindow({150,130 },std::move(prefs));
 
-
     while (run) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     w1.close();
