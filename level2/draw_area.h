@@ -44,8 +44,8 @@ namespace mxgui {
 class Rect final : public std::pair<Point,Point>
 {
 public:
-    // Empty rect constructor, yields an area with both points at (0,0)
-    Rect() : std::pair<Point,Point>(Point(0,0),Point(0,0)) {}
+    // Empty rect constructor
+    Rect() : std::pair<Point,Point>(Point(0,0),Point(-1,-1)) {}
 
     Rect(Point first, Point second) : std::pair<Point,Point>(first,second) {}
     explicit Rect(const std::pair<Point,Point>& p) : std::pair<Point,Point>(p) {}
@@ -56,7 +56,7 @@ public:
      * @return true if this area is empty
      */
     [[nodiscard]] bool empty() const {
-        return first.x() >= second.x() || first.y() >= second.y();
+        return first.x() > second.x() || first.y() > second.y();
     }
 
     /**
