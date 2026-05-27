@@ -269,6 +269,22 @@ protected:
      * p.x()+length must be <= display.width()
      */
     virtual void scanLine(Point p, const Color *colors, unsigned short length)=0;
+
+    /**
+     * Draw a vertical line on screen.
+     * This member function takes an array of colors to be able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors
+     * \param length length of colors array.
+     * p.y()+length must be <= display.height()
+     */
+    virtual void verticalScanLine(Point p, const Color *colors, unsigned short length) {
+        beginPixel();
+
+        for (auto y = p.y(); y <= p.y() + length - 1; ++y) {
+            setPixel({ p.x(), y }, *colors++);
+        }
+    }
     
     /**
      * \return a buffer of length equal to this->getWidth() that can be used to
@@ -530,6 +546,20 @@ public:
     void scanLine(Point p, const Color *colors, unsigned short length)
     {
         display.scanLine(p,colors,length);
+    }
+
+    /**
+     * Draw a vertical line on screen.
+     * This member function takes an array of colors to be
+     * able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors
+     * \param length length of colors array.
+     * p.y()+length must be <= display.height()
+     */
+    void verticalScanLine(Point p, const Color *colors, unsigned short length)
+    {
+        display.verticalScanLine(p,colors,length);
     }
     
     /**

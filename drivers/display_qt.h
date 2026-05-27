@@ -167,6 +167,17 @@ public:
      * p.x()+length must be <= display.width()
      */
     void scanLine(Point p, const Color *colors, unsigned short length) override;
+
+    /**
+     * Draw a vertical line on screen.
+     * This member function takes an array of colors to be
+     * able to individually set pixel colors of a line.
+     * \param p starting point of the line
+     * \param colors an array of pixel colors
+     * \param length length of colors array.
+     * p.y()+length must be <= display.height()
+     */
+    void verticalScanLine(Point p, const Color *colors, unsigned short length) override;
     
     /**
      * \return a buffer of length equal to this->getWidth() that can be used to

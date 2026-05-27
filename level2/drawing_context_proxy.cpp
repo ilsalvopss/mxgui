@@ -72,11 +72,7 @@ void FullScreenDrawingContextProxy::line(Point a, Point b, Color color)
 
 void FullScreenDrawingContextProxy::verticalScanLine(Point p, const Color* colors, unsigned short length)
 {
-    dc.beginPixel();
-
-    for (auto y = p.y(); y <= p.y() + length; ++y) {
-        dc.setPixel({ p.x(), y }, *colors++);
-    }
+    dc.verticalScanLine(p,colors,length);
 }
 
 void FullScreenDrawingContextProxy::scanLine(Point p, const Color *colors, unsigned short length)
@@ -243,11 +239,7 @@ void ClippedDrawingContext::verticalScanLine(Point p, const Color* colors, unsig
     if (y1 > clippingRect.second.y()) // line ends after clippingRect
         y1 = clippingRect.second.y(); // update y1 to the last pixel inside clippingRect
 
-    dc.beginPixel();
-
-    for (auto y = y0; y <= y1; ++y) {
-        dc.setPixel({ absolute_p.x(), y }, *colors++);
-    }
+    dc.verticalScanLine({ absolute_p.x(), y0 }, colors, y1 - y0 + 1);
 }
 
 void ClippedDrawingContext::scanLineBuffer(const Point p, const unsigned short length) {

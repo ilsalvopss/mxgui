@@ -184,6 +184,19 @@ void DisplayImpl::scanLine(Point p, const Color *colors, unsigned short length)
     beginPixelCalled=false;
 }
 
+void DisplayImpl::verticalScanLine(Point p, const Color* colors, unsigned short length) {
+    //Qt backend is meant to catch errors, so be bastard
+    if(p.x()<0 || p.y()<0)
+        throw(logic_error("DisplayImpl::verticalScanLine: negative value in point"));
+    if(p.x()>=width || p.y()>=height)
+        throw(logic_error("DisplayImpl::verticalScanLine: point outside display bounds"));
+    if(p.y()+length>height)
+        throw(logic_error("DisplayImpl::verticalScanLine: line too long"));
+    pixel_iterator it=begin(p,Point(p.x(),p.y()+length-1),DR);
+    for(int i=0;i<length;i++) *it=colors[i];
+    beginPixelCalled=false;
+}
+
 Color *DisplayImpl::getScanLineBuffer()
 {
     if(buffer==nullptr) buffer=new Color[getWidth()];
