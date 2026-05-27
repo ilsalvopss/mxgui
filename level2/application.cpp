@@ -59,8 +59,7 @@ Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& pr
             // we need to remove that intersection from the visible regions of the other window
             other->visibleRects = Rect::subtractRect(other->visibleRects, w->boundingBox);
         }
-    }
-    {
+
         auto dc = DrawingContext(display);
         w->clippedDraw(dc);
     }
@@ -153,54 +152,52 @@ void WindowManager::recomputeVisibleRegions(const bool alsoDraw) {
 void WindowManager::bringToFront(Window& w) {
     std::list<Rect> uncoveredRegions;
 
-    {
-        std::scoped_lock lock(stack_mutex);
+    std::scoped_lock lock(stack_mutex);
 
-        const auto it = std::find_if(
-            stack.begin(), stack.end(),
-            [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; }
-            );
-        if (it == stack.end())
-            return; // window not found, do nothing TODO: maybe we should throw an exception instead?
+    const auto it = std::find_if(
+        stack.begin(), stack.end(),
+        [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; }
+    );
+    if (it == stack.end())
+        return; // window not found, do nothing TODO: maybe we should throw an exception instead?
 
-        // The visible region of w is going to be the entirety of w, because we're bringing it to foreground.
-        const auto visibleRegion = w.boundingBox;
+    // The visible region of w is going to be the entirety of w, because we're bringing it to foreground.
+    const auto visibleRegion = w.boundingBox;
 
-        // for each window above w,
-        for (auto above = std::next(it); above != stack.end(); ++above) {
-            const auto& other = *above;
+    // for each window above w,
+    for (auto above = std::next(it); above != stack.end(); ++above) {
+        const auto& other = *above;
 
-            if (other->boundingBox.intersection(visibleRegion).empty())
-                continue; // if other doesn't overlap with w, we don't need to touch it
+        if (other->boundingBox.intersection(visibleRegion).empty())
+            continue; // if other doesn't overlap with w, we don't need to touch it
 
-            // they somehow overlap! the intersection of their bounding boxes is now being covered by w
-            // we need to remove that intersection from the visible regions of the other window
-            std::list<Rect> updated;
-            for (const auto& region: other->visibleRects) {
-                auto intersection = region.intersection(visibleRegion);
-                if (intersection.empty()) {
-                    updated.push_back(region);
-                    continue; // no intersection, check next visible region
-                }
-
-                // we have an intersection, we need to remove it from the visible regions of the other window
-                uncoveredRegions.push_back(intersection);
-
-                auto newVisibleRegions = region - intersection;
-                for (const auto& newVisibleRegion: newVisibleRegions) {
-                    if (!newVisibleRegion.empty())
-                        updated.push_back(newVisibleRegion);
-                }
+        // they somehow overlap! the intersection of their bounding boxes is now being covered by w
+        // we need to remove that intersection from the visible regions of the other window
+        std::list<Rect> updated;
+        for (const auto& region: other->visibleRects) {
+            auto intersection = region.intersection(visibleRegion);
+            if (intersection.empty()) {
+                updated.push_back(region);
+                continue; // no intersection, check next visible region
             }
 
-            other->visibleRects = std::move(updated);
+            // we have an intersection, we need to remove it from the visible regions of the other window
+            uncoveredRegions.push_back(intersection);
+
+            auto newVisibleRegions = region - intersection;
+            for (const auto& newVisibleRegion: newVisibleRegions) {
+                if (!newVisibleRegion.empty())
+                    updated.push_back(newVisibleRegion);
+            }
         }
 
-        stack.splice(stack.end(), stack, it);
-
-        w.visibleRects.clear();
-        w.visibleRects.push_back(w.boundingBox);
+        other->visibleRects = std::move(updated);
     }
+
+    stack.splice(stack.end(), stack, it);
+
+    w.visibleRects.clear();
+    w.visibleRects.push_back(w.boundingBox);
 
     auto dc = DrawingContext(display);
     w.clippedDraw(dc, uncoveredRegions);
@@ -328,9 +325,9 @@ void WindowManager::loop() {
             continue;
 
         {
+            std::scoped_lock stack_lock(stack_mutex);
             auto dc = DrawingContext(display);
 
-            std::scoped_lock stack_lock(stack_mutex);
             for (const auto& w: stack) {
                 if (w->dirtyRects.empty())
                     continue;
