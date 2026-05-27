@@ -42,8 +42,8 @@ WindowManager& WindowManager::instance() {
     return singleton;
 }
 
-Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& prefs) {
-    const std::shared_ptr<Window> w(new Window(p, std::move(prefs)));
+Window::Handle WindowManager::createWindow(const Point p, WindowPreferences&& prefs, Window::KeyEventFn keyHandler) {
+    const std::shared_ptr<Window> w(new Window(p, std::move(prefs), std::move(keyHandler)));
     w->visibleRects = { w->boundingBox };
 
     {

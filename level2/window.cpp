@@ -54,7 +54,7 @@ void Window::Handle::move(const Point to) const {
     }
 }
 
-Window::Window(Point p, WindowPreferences&& prefs) : prefs(prefs), position(p),
+Window::Window(Point p, WindowPreferences&& prefs, KeyEventFn keyfn) : prefs(prefs), keyHandler(std::move(keyfn)), position(p),
     boundingBox( p, {static_cast<short int>(p.x() + prefs.width - 1), static_cast<short int>(p.y() + prefs.height - 1)} )
 {
     makeDrawable<SolidBackground>(

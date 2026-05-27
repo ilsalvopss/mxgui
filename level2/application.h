@@ -81,7 +81,7 @@ public:
      */
     static WindowManager& instance();
 
-    Window::Handle createWindow(Point p, WindowPreferences&& prefs);
+    Window::Handle createWindow(Point p, WindowPreferences&& prefs, Window::KeyEventFn keyHandler = nullptr);
 
     void closeWindow(Window& w);
 

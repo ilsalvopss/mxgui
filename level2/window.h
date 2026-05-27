@@ -62,6 +62,7 @@ namespace mxgui {
     class Window final : public DrawableOwner {
         friend class WindowManager;
         using CloseFn = std::function<void()>;
+        using KeyEventFn = std::function<void(Event&)>;
 
         /**
          * \internal
@@ -81,10 +82,11 @@ namespace mxgui {
 
         /**
          * Constructor
-         * \param p      initial position of the new Window (top-left)
-         * \param prefs  a WindowPreferences object
+         * \param p          initial position of the new Window (top-left)
+         * \param prefs      a WindowPreferences object
+         * \param keyHandler optional keyboard events handler
          */
-        Window(Point p, WindowPreferences&& prefs);
+        Window(Point p, WindowPreferences&& prefs, KeyEventFn keyHandler = nullptr);
 
         /**
          * Draws anything belonging to this window.
@@ -108,7 +110,13 @@ namespace mxgui {
          * \param e event to post
          */
         void postEvent(Event e) {
-            hitTestAndDispatch(e);
+            if (e.hasValidPoint())
+                hitTestAndDispatch(e);
+
+            if (e.hasValidKey()) {
+                if (keyHandler)
+                    keyHandler(e);
+            }
         }
 
         /**
@@ -217,6 +225,7 @@ namespace mxgui {
 
     private:
         WindowPreferences prefs;                 ///< Window preferences
+        const KeyEventFn keyHandler;             ///< Optional key event handler
 
         Point position;                          ///< Position of the upper left corner of the window
         Rect boundingBox;                        ///< Cached bounding box of the window
