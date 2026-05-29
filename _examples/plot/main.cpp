@@ -15,13 +15,13 @@ ENTRY()
 {
     // Create a WindowPreference object to be moved into createWindow()
     WindowPreferences prefs;
-    prefs.height = 230;
-    prefs.width = 235;
+    prefs.height = 300;
+    prefs.width = 230;
     prefs.background = darkGrey;
 
     // Ask the WindowManager for a Window @ (5,5) and get a Window::Handle
     auto w = WindowManager::instance().createWindow({5, 5}, std::move(prefs));
-    auto& exit_btn = w.make<widgets::Button>(Rect{{7,205}, {230,222}}, "Close, please");
+    auto& exit_btn = w.make<widgets::Button>(Rect{{15,270}, {215,290}}, "Close, please");
     exit_btn.setCallback([&w] { w.close(); });
 
     int i=0;
@@ -32,7 +32,7 @@ ENTRY()
     dataset.push_back(widgets::SimplePlot::Dataset(data1,red));
     dataset.push_back(widgets::SimplePlot::Dataset(data2,green));
 
-    auto& plotter = w.make<widgets::SimplePlot>(Rect{{0,0}, {235,200}});
+    auto& plotter = w.make<widgets::SimplePlot>(Rect{{0,0}, {230,260}});
     std::atomic<bool> go = true;
     w.registerOnClose([&go]() { go = false; });
 
