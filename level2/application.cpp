@@ -162,7 +162,7 @@ void WindowManager::bringToFront(Window& w) {
         [&w](const std::shared_ptr<Window>& ptr) { return ptr.get() == &w; }
     );
     if (it == stack.end())
-        return; // window not found, do nothing TODO: maybe we should throw an exception instead?
+        return; // window not found, do nothing
 
     // The visible region of w is going to be the entirety of w, because we're bringing it to foreground.
     const auto visibleRegion = w.boundingBox;
@@ -329,6 +329,8 @@ void WindowManager::loop() {
             continue;
 
         {
+            // Note for the future: it's important that the stack_mutex is locked BEFORE grabbing a DrawingContext
+            //                      to avoid deadlocking. This is a convention true throughout the codebase
             std::scoped_lock stack_lock(stack_mutex);
             auto dc = DrawingContext(display);
 

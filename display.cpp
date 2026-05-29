@@ -117,9 +117,4 @@ Font Display::getFont() const { return font; }
 
 void Display::update() {}
 
-Display::~Display() {
-    // TODO: A DrawingContext may still got a reference to this so we should probably lock the mutex?
-    //       Ask Cattaneo
-}
-
 } //namespace mxgui

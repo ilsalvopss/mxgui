@@ -125,8 +125,8 @@ namespace mxgui {
          */
         void enqueueForRedraw() const;
 
-        DrawableOwner &owner;
-        Rect da;         ///< Area on screen occupied by this object
+        DrawableOwner &owner;   ///< reference to the DrawableOwner to which this belongs
+        Rect da;                ///< Area on screen occupied by this object
     };
 
     /**
@@ -140,6 +140,9 @@ namespace mxgui {
     class DrawableOwner {
         /**
          * Override this to decide how you want to redraw your drawables.
+         * For example, you could maintain an internal state of what you want to draw on the next onDraw()
+         * based on the Rect r you're getting here
+         *
          * You should (probably) eventually forward this to your owner (which may be the Window);
          *
          * @param r region that needs to be redrawn, in the coordinate system of the Window
@@ -192,13 +195,15 @@ namespace mxgui {
         /**
          * \internal
          * Called by a drawable to signal that it needs to be redrawn.
+         *
+         * This is where the ordering of the Drawables matters: a Drawable added after another is visually "on top"
          * \param d drawable that needs to be redrawn
          */
         template<class T>
         requires std::is_base_of_v<Drawable, T>
         void needsPartialRedraw(Badge<T>, const T& d) {
             const auto area = d.getDrawArea();
-            std::list<Rect> dirtyAndVisible = { area };  // TODO: think how to avoid a dynamic container here
+            std::list<Rect> dirtyAndVisible = { area };
 
             {
                 std::scoped_lock lock(drawables_mutex);

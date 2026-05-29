@@ -160,7 +160,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~Display();
+    virtual ~Display() = default;
 
 protected:
     /**

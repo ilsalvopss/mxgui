@@ -59,6 +59,12 @@ namespace mxgui {
         Font font;        ///< Default font
     };
 
+    /**
+     * A Window object.
+     *
+     * Most of the state is handled by the WindowManager and its locks. Indeed, only Window::Handle can be used from
+     * outside to mutate the state of a Window via messages to the WindowManager's event loop.
+     */
     class Window final : public DrawableOwner {
         friend class WindowManager;
         using CloseFn = std::function<void()>;
@@ -120,11 +126,19 @@ namespace mxgui {
         }
 
         /**
+         * Implements DrawableOwner::needsRedrawForRect
+         *
+         * This should be the final needsRedrawForRect in a chain of DrawableOwner(s)
+         * @param r rect for which redraw is needed
+         */
+        void needsRedrawForRect(const Rect& r) override;
+
+        /**
          * \internal
          * Registers the closing callback for this window.
          * @param f a callback with signature compatible with CloseFn
          */
-        void registerOnClose(const CloseFn f) { onClose = f; }
+        void registerOnClose(const CloseFn& f) { onClose = f; }
     public:
 
         /**
@@ -209,9 +223,13 @@ namespace mxgui {
             explicit Handle(const std::shared_ptr<Window>& w) : w(w) {}
         };
 
+        /**
+         * Implements DrawableOwner::getWindow()
+         *
+         * This should be the final getWindow() in a chain of DrawableOwner(s)
+         * @return this window
+         */
         Window& getWindow() override { return *this; }
-
-        void needsRedrawForRect(const Rect& r) override;
 
         /**
          * \return the window preferences
