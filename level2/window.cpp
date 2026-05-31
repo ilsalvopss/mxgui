@@ -27,6 +27,7 @@
 
 #include "application.h"
 #include "window.h"
+#include "widgets/solid_background.h"
 
 #ifdef MXGUI_LEVEL_2
 
@@ -57,7 +58,7 @@ void Window::Handle::move(const Point to) const {
 Window::Window(Point p, WindowPreferences&& prefs, KeyEventFn keyfn) : prefs(prefs), keyHandler(std::move(keyfn)), position(p),
     boundingBox( p, {static_cast<short int>(p.x() + prefs.width - 1), static_cast<short int>(p.y() + prefs.height - 1)} )
 {
-    makeDrawable<SolidBackground>(
+    makeDrawable<widgets::SolidBackground>(
         Rect { Point{0, 0}, Point{ static_cast<short int>(prefs.width - 1), static_cast<short int>(prefs.height - 1) } },
         prefs.background
         );

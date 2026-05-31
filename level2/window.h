@@ -27,7 +27,6 @@
 
 #pragma once
 
-#include "badge.h"
 #include "misc_inst.h"
 #include "drawable.h"
 
@@ -69,22 +68,6 @@ namespace mxgui {
         friend class WindowManager;
         using CloseFn = std::function<void()>;
         using KeyEventFn = std::function<void(Event&)>;
-
-        /**
-         * \internal
-         * Simple Drawable object that paints the background of a Window.
-         */
-        class SolidBackground final : public Drawable {
-        public:
-            SolidBackground(BadgedRef<DrawableOwner>&& owner, const Rect& da, const Color color)
-                            : Drawable(std::move(owner), da), color(color) {}
-        private:
-            Color color;
-
-            void onDraw(DrawingContextProxy& dc) override {
-                dc.clear(color);
-            }
-        };
 
         /**
          * Constructor
