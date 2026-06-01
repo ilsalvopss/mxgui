@@ -76,6 +76,34 @@ void Window::clippedDraw(DrawingContext& dc, const std::list<Rect>& requestedRec
             clippedDc.setFont(prefs.font);
             std::scoped_lock lock(drawables_mutex);
 
+            // (optimization) most of the repaint requests scoped with requestedRects
+            // are requested by a Drawable for its own area (i.e. the drawable covers the entire repaint clip region)
+            // the following loop looks for such a case, immediately giving up if conditions do not line up
+            bool early_skip = false;
+            for (auto it = drawables.rbegin(); it != drawables.rend(); ++it) {
+                const auto& drawable = *it;
+                const auto intersection = drawable->getDrawArea().intersection(requested_and_visible.translate(-position));
+
+                if (intersection.empty())
+                    continue; // drawable not involved in requested area, keep looking
+
+                if (!drawable->isCompletelyOpaque())
+                    break; // something not completely opaque found on top of other stuff. we need to draw bottom to top
+
+                if (!intersection.contains(requested_and_visible.translate(-position)))
+                    break; // drawable doesn't completely cover the requested area, we need to draw bottom to top
+
+                drawable->draw<Window>({}, clippedDc);
+
+                // this drawable completely covers the requested (visible) region, there's nothing more to draw
+                early_skip = true;
+                break;
+            }
+
+            if (early_skip)
+                continue;
+
+            // general case, drawables painted back to front
             for (const auto& drawable: drawables) {
                 if (drawable->getDrawArea().intersection(requested_and_visible.translate(-position)).empty())
                     continue;
