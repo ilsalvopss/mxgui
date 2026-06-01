@@ -60,7 +60,13 @@ public:
      * \param text text written in the Label
      */
     Label(BadgedRef<DrawableOwner>&& owner, Point p, short width, short height, const std::string& text="");
-    
+
+    /**
+     * Overrides Drawable::isCompletelyOpaque to return true, since our onDraw() completely redraws the draw area.
+     * @return true
+     */
+    constexpr bool isCompletelyOpaque() override { return true; }
+
     /**
      * \return the text being displayed 
      */

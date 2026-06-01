@@ -57,6 +57,13 @@ public:
 
     void setFont(const Font& font) { this->font=font; }
     
+
+    /**
+     * Overrides Drawable::isCompletelyOpaque to return true, since our onDraw() completely redraws the draw area.
+     * @return true
+     */
+    constexpr bool isCompletelyOpaque() override { return true; }
+
     Point upperLeft;
     Point lowerRight;
     Font font;

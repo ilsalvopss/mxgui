@@ -65,7 +65,6 @@ public:
         enqueueForRedraw();
     }
 
-
     /**
      * Change the image being displayed
      * \param image new image to display
@@ -76,6 +75,15 @@ public:
     {
         img = std::make_unique<ImageType>(std::forward<ImageType>(image));
         enqueueForRedraw();
+    }
+
+    /**
+     * Overrides Drawable::isCompletelyOpaque to return true, since our onDraw() completely redraws the draw area.
+     * @return true
+     */
+    constexpr bool isCompletelyOpaque() override {
+        // if image transparency is supported in the future, dynamically decide here
+        return true;
     }
 
 private:

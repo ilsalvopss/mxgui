@@ -51,9 +51,19 @@ namespace mxgui {
          * Returns the draw area for this Drawable.
          * Note that you can override this if the Drawable you're implementing needs
          * to return something more complex than the area with which it was constructed.
+         *
          * \return the draw area of the object
          */
         [[nodiscard]] virtual Rect getDrawArea() const { return da; }
+
+        /**
+         * Override this to guarantee that your onDraw() repaints the entirety of your draw area
+         * and you don't need "transparency".
+         * This allows for faster redraws since the window manager doesn't need to redraw the drawables below you.
+         *
+         * @return true if this Drawable guarantees that a call to its onDraw() repaints all its drawArea
+         */
+        virtual constexpr bool isCompletelyOpaque() { return false; }
 
         /**
          * Drawing entry point accessible only to DrawableOwner(s)

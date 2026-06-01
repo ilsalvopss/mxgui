@@ -41,6 +41,8 @@ class SolidBackground final : public Drawable {
 public:
     SolidBackground(BadgedRef<DrawableOwner>&& owner, const Rect& da, const Color color)
                     : Drawable(std::move(owner), da), color(color) {}
+
+    constexpr bool isCompletelyOpaque() override { return true; }
 private:
     Color color;
 

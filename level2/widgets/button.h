@@ -71,6 +71,13 @@ public:
      * @return window to which this button belongs
      */
     Window& getWindow() override { return owner.getWindow(); }
+
+    /**
+     * Overrides Drawable::isCompletelyOpaque to return true, since our onDraw() completely redraws the button area.
+     * @return true
+     */
+    constexpr bool isCompletelyOpaque() override { return true; }
+
 protected:
     /** 
      * Overridden this member function to set the colors of the button when it is pressed
