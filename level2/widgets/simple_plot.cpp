@@ -27,7 +27,7 @@
  ***************************************************************************/
 
 #include "simple_plot.h"
-#include "display_state_saver.h"
+#include "solid_background.h"
 #include <cmath>
 #include <limits>
 #include <sstream>
@@ -46,6 +46,8 @@ SimplePlot::SimplePlot(BadgedRef<DrawableOwner>&& owner, Rect da) :
 {
     foreground=white;
     background=black;
+
+    makeDrawable<SolidBackground>(da, background);
     
     ymin=0.f;
     ymax=1.f;
@@ -90,6 +92,12 @@ void SimplePlot::plot(const vector<Dataset>& dataset, bool fullRedraw)
 }
 
 void SimplePlot::onDraw(DrawingContextProxy& dc) {
+    if (first) {
+        for (const auto& d : drawables) {
+            d->draw<SimplePlot>({}, dc);
+        }
+    }
+
     const int fh=font.getHeight();
     const int whitespaceBeforeTicks=1;
     const int ticksLength=4;
@@ -160,36 +168,66 @@ void SimplePlot::onDraw(DrawingContextProxy& dc) {
         return;
     }
 
+    first = false;
+
+    vector<Color> buffer;
+    buffer.resize(h);
+
     if(numElem<x2-x1)
     {
         //More points on screen than data points
 
-        //TODO: avoid clearing
-        dc.clear(Point(x1,y1),Point(x2,y2),background);
-
         const float incr=static_cast<float>(x2-x1+1)/static_cast<float>(numElem-1);
-        for(vector<Dataset>::const_iterator it=dataset.begin();it!=dataset.end();++it)
+        for(int x=x1;x<=x2;x++)
         {
-            float xAcc=x1;
-            int xPrev=x1;
-            int yPrev=-1;
-            vector<float>::const_iterator it2=it->data->begin();
-            if(!isnan(*it2))
-                yPrev=min(y2,max<int>(y1,y2-((*it2-ymin)/(ymax-ymin)*static_cast<float>(h))));
-            for(++it2;it2!=it->data->end();++it2)
+            fill(buffer.begin(),buffer.end(),background);
+
+            for(vector<Dataset>::const_iterator it=dataset.begin();it!=dataset.end();++it)
             {
-                float xAccNext=xAcc+incr;
-                int x=min(x2,static_cast<int>(xAccNext+0.5f));
-                int y;
+                float xAcc=x1;
+                int xPrev=x1;
+                int yPrev=-1;
+                vector<float>::const_iterator it2=it->data->begin();
                 if(!isnan(*it2))
+                    yPrev=min(y2,max<int>(y1,y2-((*it2-ymin)/(ymax-ymin)*static_cast<float>(h))));
+
+                for(++it2;it2!=it->data->end();++it2)
                 {
-                    y=min(y2,max<int>(y1,y2-((*it2-ymin)/(ymax-ymin)*static_cast<float>(h))));
-                    if(yPrev>=0) dc.line(Point(xPrev,yPrev),Point(x,y),it->color);
-                } else y=-1;
-                xAcc=xAccNext;
-                yPrev=y;
-                xPrev=x;
+                    float xAccNext=xAcc+incr;
+                    int xNext=min(x2,static_cast<int>(xAccNext+0.5f));
+                    int yNext=-1;
+                    if(!isnan(*it2))
+                        yNext=min(y2,max<int>(y1,y2-((*it2-ymin)/(ymax-ymin)*static_cast<float>(h))));
+
+                    if(yPrev>=0 && yNext>=0 && x>=xPrev && x<=xNext)
+                    {
+                        int yStart;
+                        int yEnd;
+                        if(xNext==xPrev)
+                        {
+                            yStart=yPrev;
+                            yEnd=yNext;
+                        } else {
+                            const float dx=static_cast<float>(xNext-xPrev);
+                            const float t0=static_cast<float>(x-xPrev)/dx;
+                            const float t1=static_cast<float>(min(x+1,xNext)-xPrev)/dx;
+                            yStart=static_cast<int>(lround(yPrev+(yNext-yPrev)*t0));
+                            yEnd=static_cast<int>(lround(yPrev+(yNext-yPrev)*t1));
+                        }
+
+                        if(yStart>yEnd) swap(yStart,yEnd);
+                        yStart=max(y1,yStart);
+                        yEnd=min(y2,yEnd);
+                        for(int y=yStart;y<=yEnd;y++) buffer.at(y-y1)=buffer.at(y-y1) | it->color;
+                    }
+
+                    xAcc=xAccNext;
+                    yPrev=yNext;
+                    xPrev=xNext;
+                }
             }
+
+            dc.verticalScanLine(Point(x,y1),buffer.data(),h);
         }
     } else {
         //More data points than points on screen
@@ -197,8 +235,6 @@ void SimplePlot::onDraw(DrawingContextProxy& dc) {
         const float incr=static_cast<float>(numElem)/static_cast<float>(x2-x1+1);
         float xAcc=0.f;
 
-        vector<Color> buffer;
-        buffer.resize(h);
         vector<pair<int,int> > prevY;
         prevY.resize(dataset.size(),make_pair(-1,-1));
 

@@ -17,7 +17,7 @@ ENTRY()
     WindowPreferences prefs;
     prefs.height = 300;
     prefs.width = 230;
-    prefs.background = darkGrey;
+    prefs.background = rgb565(0, 40, 40);
 
     // Ask the WindowManager for a Window @ (5,5) and get a Window::Handle
     auto w = WindowManager::instance().createWindow({5, 5}, std::move(prefs));
@@ -32,7 +32,7 @@ ENTRY()
     dataset.push_back(widgets::SimplePlot::Dataset(data1,red));
     dataset.push_back(widgets::SimplePlot::Dataset(data2,green));
 
-    auto& plotter = w.make<widgets::SimplePlot>(Rect{{0,0}, {230,260}});
+    auto& plotter = w.make<widgets::SimplePlot>(Rect{{5,5}, {220,260}});
     std::atomic<bool> go = true;
     w.registerOnClose([&go]() { go = false; });
 

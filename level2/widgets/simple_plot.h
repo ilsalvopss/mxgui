@@ -36,7 +36,7 @@
 
 namespace mxgui::widgets {
 
-class SimplePlot : public Drawable
+class SimplePlot : public Drawable, public DrawableOwner
 {
 public:
     class Dataset
@@ -56,13 +56,14 @@ public:
     void plot(const std::vector<Dataset>& dataset, bool fullRedraw=false);
 
     void setFont(const Font& font) { this->font=font; }
-    
 
     /**
      * Overrides Drawable::isCompletelyOpaque to return true, since our onDraw() completely redraws the draw area.
      * @return true
      */
     constexpr bool isCompletelyOpaque() override { return true; }
+
+    Window& getWindow() override { return owner.getWindow(); }
 
     Point upperLeft;
     Point lowerRight;
@@ -75,6 +76,10 @@ public:
     
 private:
     void onDraw(DrawingContextProxy& dc) override;
+
+    void needsRedrawForRect(const Rect& r) override {
+        owner.needsPartialRedraw({}, *this);
+    }
 
     std::mutex data_mutex;
     std::string number(float num);
